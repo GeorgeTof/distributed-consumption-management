@@ -9,8 +9,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: users-db
-    ports:
-      - "5433:5432"
     volumes:
       - users-data:/var/lib/postgresql/data
     networks:
@@ -24,8 +22,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: devices-db
-    ports:
-      - "5434:5432"
     volumes:
       - devices-data:/var/lib/postgresql/data
     networks:
