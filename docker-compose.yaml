@@ -1,6 +1,21 @@
 version: '3'
 
 services:
+  traefik:
+    image: traefik:v3.2
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"       # HTTP
+      - "8080:8080"   # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - traefik_logs:/var/log/traefik
+    networks:
+      demo_net:
+
   users-db:
     image: postgres
     container_name: users-db
@@ -32,8 +47,8 @@ services:
       context: ./UserService
       dockerfile: ./Dockerfile
     container_name: user-service
-    ports:
-      - "8081:8080"
+    # ports:
+    #   - "8081:8080"
     environment:
       - DB_IP=users-db
       - DB_PORT=5432
@@ -48,8 +63,8 @@ services:
       context: ./DeviceService
       dockerfile: ./Dockerfile
     container_name: device-service
-    ports:
-      - "8082:8080"
+    # ports:
+    #   - "8082:8080"
     environment:
       - DB_IP=devices-db
       - DB_PORT=5432
@@ -63,6 +78,7 @@ services:
 volumes:
   users-data:
   devices-data:
+  traefik_logs:
 
 networks:
   demo_net:

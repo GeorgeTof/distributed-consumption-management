@@ -1,0 +1,31 @@
+http:
+  routers:
+    user-api:
+      rule: "Host(`localhost`) && PathPrefix(`/users`)"
+      entryPoints: [web]
+      # middlewares: [strip-users-prefix]
+      service: user-service
+
+    device-api:
+      rule: "Host(`localhost`) && PathPrefix(`/devices`)"
+      entryPoints: [web]
+      # middlewares: [strip-devices-prefix]
+      service: device-service
+
+  # middlewares:
+  #   strip-users-prefix:
+  #     stripPrefix:
+  #       prefixes: ["/users"]
+  #   strip-devices-prefix:
+  #     stripPrefix:
+  #       prefixes: ["/devices"]
+
+  services:
+    user-service:
+      loadBalancer:
+        servers:
+          - url: "http://user-service:8080"    # container name + internal port
+    device-service:
+      loadBalancer:
+        servers:
+          - url: "http://device-service:8080"  # container name + internal port
