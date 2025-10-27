@@ -18,7 +18,7 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
 
-    // This MUST be the same as in traefik
+    // SECRET - match with traefik config
     private static final String SECRET = "supersecret123456supersecret123456";
 
     private final UserRepository userRepository;

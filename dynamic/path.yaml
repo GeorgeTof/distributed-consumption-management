@@ -3,22 +3,34 @@ http:
     user-api:
       rule: "Host(`localhost`) && PathPrefix(`/users`)"
       entryPoints: [web]
-      # middlewares: [strip-users-prefix]
       service: user-service
+      # todo middleware
 
     device-api:
       rule: "Host(`localhost`) && PathPrefix(`/devices`)"
       entryPoints: [web]
-      # middlewares: [strip-devices-prefix]
       service: device-service
+      # todo middleware
+    
+    auth-api:
+      rule: "Host(`localhost`) && PathPrefix(`/auth`)"
+      entryPoints: [web]
+      service: auth-service
 
-  # middlewares:
-  #   strip-users-prefix:
-  #     stripPrefix:
-  #       prefixes: ["/users"]
-  #   strip-devices-prefix:
-  #     stripPrefix:
-  #       prefixes: ["/devices"]
+  middlewares:
+    jwt-auth:
+      plugin:
+        jwt-validation-middleware:
+          # SECRET - match with auth service
+          secret: "supersecret123456supersecret123456" 
+          signingMethod: "HS256"
+          authHeader: true
+          claims: "role"
+          requiredClaim:
+            role: ["ROLE_USER", "ROLE_ADMIN"]
+          payloadHeaders:
+            X-User: "sub"
+            X-Role: "role"
 
   services:
     user-service:
@@ -28,4 +40,8 @@ http:
     device-service:
       loadBalancer:
         servers:
-          - url: "http://device-service:8080"  # container name + internal port
+          - url: "http://device-service:8080" 
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-service:8081"
