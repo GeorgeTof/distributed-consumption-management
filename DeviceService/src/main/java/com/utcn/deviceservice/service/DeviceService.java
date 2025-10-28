@@ -45,9 +45,42 @@ public class DeviceService {
     public Long insert(DeviceDTO deviceDTO) {
         Device device = DeviceBuilder.toEntity(deviceDTO);
 
-        device = deviceRepository.save(device);
+        if (device.getOwnerUsername() == null || device.getOwnerUsername().isBlank()) {
+            throw new RuntimeException("ownerUsername must be provided by admin");
+        }
 
+        device.setPowerConsumed(0.0);
+
+        device = deviceRepository.save(device);
         LOGGER.debug("Device with id {} was inserted in db", device.getId());
         return device.getId();
+    }
+
+    public List<DeviceDTO> findDeviceByUsername(String username) {
+        List<Device> deviceList = deviceRepository.findByOwnerUsername(username);
+
+        return deviceList.stream()
+                .map(DeviceBuilder::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public DeviceDTO updateDeviceConsumption(Long id, Double powerConsumed) {
+        Device device = deviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Device with id: " + id));
+
+        device.setPowerConsumed(powerConsumed);
+        Device updatedDevice = deviceRepository.save(device);
+
+        return DeviceBuilder.toDTO(updatedDevice);
+    }
+
+    public void deleteDevice(Long id) {
+        if (!deviceRepository.existsById(id)) {
+            LOGGER.error("Device with id {} was not found in db", id);
+            throw new ResourceNotFoundException("Device with id: " + id);
+        }
+
+        deviceRepository.deleteById(id);
+        LOGGER.debug("Device with id {} was deleted from db", id);
     }
 }

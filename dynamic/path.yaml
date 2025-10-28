@@ -10,7 +10,7 @@ http:
       rule: "Host(`localhost`) && PathPrefix(`/devices`)"
       entryPoints: [web]
       service: device-service
-      # todo middleware
+      middlewares: [jwt-auth]
     
     auth-api:
       rule: "Host(`localhost`) && PathPrefix(`/auth`)"

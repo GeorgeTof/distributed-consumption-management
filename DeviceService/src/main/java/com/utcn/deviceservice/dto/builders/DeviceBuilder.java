@@ -9,14 +9,17 @@ public class DeviceBuilder {
         return new DeviceDTO(
                 device.getId(),
                 device.getName(),
+                device.getOwnerUsername(),
                 device.getBrand(),
-                device.getMaximumConsumption()
+                device.getMaximumConsumption(),
+                device.getPowerConsumed()
         );
     }
 
     public static Device toEntity(DeviceDTO deviceDTO) {
         return new Device(
                 deviceDTO.name(),
+                deviceDTO.ownerUsername(),
                 deviceDTO.brand(),
                 deviceDTO.maximumConsumption()
         );

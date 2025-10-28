@@ -32,7 +32,6 @@ public class UserController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<UserDTO> getUserProfile(HttpServletRequest req) {
-
         String username = req.getHeader("X-User");
         UserDTO user = userService.findUserByUsername(username);
         return ResponseEntity.ok(user);
