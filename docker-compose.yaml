@@ -3,15 +3,15 @@ services:
     image: traefik:v3.2
     container_name: traefik
     restart: always
-    command:
-      - "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--providers.docker=true" 
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--providers.file.watch=true"
-      - "--entrypoints.web.address=:80"
-      - "--experimental.plugins.jwtValidation.moduleName=github.com/legege/jwt-validation-middleware"
-      - "--experimental.plugins.jwtValidation.version=v0.2.1"
+    # command:
+    #   - "--log.level=DEBUG"
+    #   - "--api.insecure=true"
+    #   - "--providers.docker=true" 
+    #   - "--providers.file.directory=/etc/traefik/dynamic"
+    #   - "--providers.file.watch=true"
+    #   - "--entrypoints.web.address=:80"
+    #   - "--experimental.plugins.jwtValidation.moduleName=github.com/legege/jwt-validation-middleware"
+    #   - "--experimental.plugins.jwtValidation.version=v0.2.1"
     ports:
       - "80:80"       # HTTP
       - "8080:8080"   # Traefik Dashboard

@@ -1,5 +1,5 @@
 log:
-  level: INFO
+  level: DEBUG # INFO normally
 
 accessLog:
   filePath: "/var/log/traefik/access.log"
@@ -20,3 +20,9 @@ providers:
   docker:
     exposedByDefault: false
     network: demo_net   
+
+experimental:
+  plugins:
+    jwtValidation:
+      moduleName: "github.com/legege/jwt-validation-middleware"
+      version: "v0.2.1"

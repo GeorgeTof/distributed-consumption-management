@@ -1,0 +1,10 @@
+# Traefik plugin cache
+plugins-storage/
+
+# Java build folders
+target/
+*/target/
+
+# IDE files
+.idea/
+*.iml

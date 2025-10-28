@@ -4,7 +4,7 @@ http:
       rule: "Host(`localhost`) && PathPrefix(`/users`)"
       entryPoints: [web]
       service: user-service
-      # todo middleware
+      middlewares: [jwt-auth]
 
     device-api:
       rule: "Host(`localhost`) && PathPrefix(`/devices`)"
@@ -20,7 +20,7 @@ http:
   middlewares:
     jwt-auth:
       plugin:
-        jwt-validation-middleware:
+        jwtValidation:
           # SECRET - match with auth service
           secret: "supersecret123456supersecret123456" 
           signingMethod: "HS256"

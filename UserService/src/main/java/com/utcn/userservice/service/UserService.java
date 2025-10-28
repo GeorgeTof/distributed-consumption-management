@@ -31,6 +31,17 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    public UserDTO findUserByUsername(String username) {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+
+        if (!userOptional.isPresent()) {
+            LOGGER.error("User with username {} was not found in db", username);
+            throw new ResourceNotFoundException(User.class.getSimpleName() + " with username: " + username);
+        }
+
+        return UserBuilder.toUserDTO(userOptional.get());
+    }
+
     public UserDTO findUserById(Long id) {
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -42,7 +53,7 @@ public class UserService {
         return UserBuilder.toUserDTO(userOptional.get());
     }
 
-    // 3. CREATE (insert equivalent)
+    // 3. CREATE (insert equivalent) TODO - probabil remove, e ok fara parola aici
     // NOTE: We need a DTO that includes the password for creation,
     // so this method should ideally receive a UserCreationDTO or UserDetailsDTO.
     // For now, we'll use UserDTO and handle the conversion.
