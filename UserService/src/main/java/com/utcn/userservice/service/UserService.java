@@ -2,22 +2,26 @@ package com.utcn.userservice.service;
 
 import com.utcn.userservice.dto.UserDTO;
 import com.utcn.userservice.dto.builders.UserBuilder;
+import com.utcn.userservice.handlers.exceptions.model.BadRequestException;
+import com.utcn.userservice.handlers.exceptions.model.ConflictException;
+import com.utcn.userservice.handlers.exceptions.model.ResourceNotFoundException;
 import com.utcn.userservice.model.User;
 import com.utcn.userservice.repo.UserRepository;
-import com.utcn.userservice.handlers.exceptions.model.ResourceNotFoundException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
+
+    private static final Set<String> VALID_ROLES = Set.of("ADMIN", "USER");
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -64,6 +68,8 @@ public class UserService {
     }
 
     public Long insert(UserDTO userDTO) {
+        validateUserForCreation(userDTO);
+
         User user = UserBuilder.toEntity(userDTO);
 
         user = userRepository.save(user);
@@ -81,9 +87,10 @@ public class UserService {
 
         Optional<User> userWithNewEmail = userRepository.findByEmail(newEmail);
         if (userWithNewEmail.isPresent() && !userWithNewEmail.get().getId().equals(user.getId())) {
-            // TODO: Refactor this to throw a custom ResourceAlreadyExistsException
-            LOGGER.warn("Attempt to update email to {} which is already in use.", newEmail);
-            throw new IllegalStateException("Email " + newEmail + " is already in use by another account.");
+
+            String details = "Email " + newEmail + " is already in use by another account.";
+            LOGGER.warn(details);
+            throw new ConflictException(details);
         }
 
         user.setEmail(newEmail);
@@ -91,5 +98,25 @@ public class UserService {
         LOGGER.debug("User with id {} email was updated by an admin", updatedUser.getId());
 
         return UserBuilder.toUserDTO(updatedUser);
+    }
+
+    private void validateUserForCreation(UserDTO userDTO) {
+        userRepository.findByUsername(userDTO.username())
+                .ifPresent(u -> {
+                    throw new ConflictException("Username '" + userDTO.username() + "' is already taken.");
+                });
+
+        userRepository.findByEmail(userDTO.email())
+                .ifPresent(u -> {
+                    throw new ConflictException("Email '" + userDTO.email() + "' is already in use.");
+                });
+
+        if (userDTO.role() == null || !VALID_ROLES.contains(userDTO.role().toUpperCase())) {
+            throw new BadRequestException("Role must be one of: " + VALID_ROLES);
+        }
+
+        if (userDTO.age() == null || userDTO.age() < 18) {
+            throw new BadRequestException("User must be at least 18 years old.");
+        }
     }
 }
