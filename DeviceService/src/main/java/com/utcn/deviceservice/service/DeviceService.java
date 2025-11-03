@@ -2,9 +2,10 @@ package com.utcn.deviceservice.service;
 
 import com.utcn.deviceservice.dto.DeviceDTO;
 import com.utcn.deviceservice.dto.builders.DeviceBuilder;
+import com.utcn.deviceservice.handlers.exceptions.model.BadRequestException;
+import com.utcn.deviceservice.handlers.exceptions.model.ResourceNotFoundException;
 import com.utcn.deviceservice.model.Device;
 import com.utcn.deviceservice.repo.DeviceRepository;
-import com.utcn.deviceservice.handlers.exceptions.model.ResourceNotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,12 +44,9 @@ public class DeviceService {
     }
 
     public Long insert(DeviceDTO deviceDTO) {
+        validateDeviceForCreation(deviceDTO);
+
         Device device = DeviceBuilder.toEntity(deviceDTO);
-
-        if (device.getOwnerUsername() == null || device.getOwnerUsername().isBlank()) {
-            throw new RuntimeException("ownerUsername must be provided by admin");
-        }
-
         device.setPowerConsumed(0.0);
 
         device = deviceRepository.save(device);
@@ -65,6 +63,10 @@ public class DeviceService {
     }
 
     public DeviceDTO updateDeviceConsumption(Long id, Double powerConsumed) {
+        if (powerConsumed == null || powerConsumed < 0.0) {
+            throw new BadRequestException("Power consumption cannot be null or negative.");
+        }
+
         Device device = deviceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Device with id: " + id));
 
@@ -82,5 +84,20 @@ public class DeviceService {
 
         deviceRepository.deleteById(id);
         LOGGER.debug("Device with id {} was deleted from db", id);
+    }
+
+    private void validateDeviceForCreation(DeviceDTO dto) {
+        if (dto.name() == null || dto.name().isBlank()) {
+            throw new BadRequestException("Device name must not be empty.");
+        }
+        if (dto.ownerUsername() == null || dto.ownerUsername().isBlank()) {
+            throw new BadRequestException("ownerUsername must be provided.");
+        }
+        if (dto.brand() == null || dto.brand().isBlank()) {
+            throw new BadRequestException("Device brand must not be empty.");
+        }
+        if (dto.maximumConsumption() == null || dto.maximumConsumption() <= 0.0) {
+            throw new BadRequestException("Maximum consumption must be a positive number.");
+        }
     }
 }
