@@ -4,6 +4,7 @@ import com.utcn.authservice.model.User;
 import com.utcn.authservice.repo.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,19 +59,18 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public Map<String, String> signup(@RequestParam String username, @RequestParam String password) {
-
-        if (username == null || username.isBlank()) {
-            throw new RuntimeException("Username cannot be empty");
-        }
-
-        if (userRepository.findByUsername(username).isPresent()) {
-            // Alternative 409 Conflict for HTTP status response
-            throw new RuntimeException("Username already taken");
-        }
+    public ResponseEntity<?> signup(@RequestParam String username, @RequestParam String password) {
 
         if (password == null || password.isBlank()) {
-            throw new RuntimeException("Password cannot be empty");
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Password cannot be empty"));
+        }
+
+        if (password.length() < 6) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Password must be at least 6 characters long"));
         }
 
         User newUser = new User(
@@ -91,10 +91,12 @@ public class AuthController {
                 .signWith(key)
                 .compact();
 
-        return Map.of(
+        Map<String, String> responseBody = Map.of(
                 "token", token,
                 "user", newUser.getUsername(),
                 "roles", String.join(",", newUser.getRoles())
         );
+
+        return ResponseEntity.ok(responseBody);
     }
 }
