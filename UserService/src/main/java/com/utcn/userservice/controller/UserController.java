@@ -1,5 +1,6 @@
 package com.utcn.userservice.controller;
 
+import com.utcn.userservice.dto.UpdateEmailRequestDTO;
 import com.utcn.userservice.dto.UserDTO;
 import com.utcn.userservice.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,5 +58,19 @@ public class UserController {
                 .toUri();
 
         return ResponseEntity.created(location).build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/email")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> updateEmail(@PathVariable Long id, @Valid @RequestBody UpdateEmailRequestDTO emailDTO) {
+        UserDTO updatedUser = userService.updateUserEmail(id, emailDTO.newEmail());
+        return ResponseEntity.ok(updatedUser);
     }
 }

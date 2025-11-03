@@ -53,18 +53,43 @@ public class UserService {
         return UserBuilder.toUserDTO(userOptional.get());
     }
 
-    // 3. CREATE (insert equivalent) TODO - probabil remove, e ok fara parola aici
-    // NOTE: We need a DTO that includes the password for creation,
-    // so this method should ideally receive a UserCreationDTO or UserDetailsDTO.
-    // For now, we'll use UserDTO and handle the conversion.
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            LOGGER.error("User with id {} was not found in db", id);
+            throw new ResourceNotFoundException(User.class.getSimpleName() + " with id: " + id);
+        }
+
+        userRepository.deleteById(id);
+        LOGGER.debug("User with id {} was deleted from db", id);
+    }
+
     public Long insert(UserDTO userDTO) {
-        // Map DTO to Entity
         User user = UserBuilder.toEntity(userDTO);
 
-        // Persistence via Repository
         user = userRepository.save(user);
 
         LOGGER.debug("User with id {} was inserted in db", user.getId());
         return user.getId();
+    }
+
+    public UserDTO updateUserEmail(Long id, String newEmail) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> {
+                    LOGGER.error("User with id {} was not found in db", id);
+                    return new ResourceNotFoundException(User.class.getSimpleName() + " with id: " + id);
+                });
+
+        Optional<User> userWithNewEmail = userRepository.findByEmail(newEmail);
+        if (userWithNewEmail.isPresent() && !userWithNewEmail.get().getId().equals(user.getId())) {
+            // TODO: Refactor this to throw a custom ResourceAlreadyExistsException
+            LOGGER.warn("Attempt to update email to {} which is already in use.", newEmail);
+            throw new IllegalStateException("Email " + newEmail + " is already in use by another account.");
+        }
+
+        user.setEmail(newEmail);
+        User updatedUser = userRepository.save(user);
+        LOGGER.debug("User with id {} email was updated by an admin", updatedUser.getId());
+
+        return UserBuilder.toUserDTO(updatedUser);
     }
 }
