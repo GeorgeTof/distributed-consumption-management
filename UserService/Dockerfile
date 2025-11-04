@@ -11,7 +11,7 @@ COPY ./src/ /demo/src
 WORKDIR /demo
 RUN mvn clean install -DskipTests
 
-FROM openjdk:25-jdk
+FROM eclipse-temurin:25-jdk
 WORKDIR /demo
 COPY --from=build /demo/target/UserService-0.0.1-SNAPSHOT.jar /demo/demo.jar
 EXPOSE 8080

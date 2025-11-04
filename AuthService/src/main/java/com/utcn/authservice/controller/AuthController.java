@@ -4,16 +4,16 @@ import com.utcn.authservice.model.User;
 import com.utcn.authservice.repo.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -59,7 +59,15 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestParam String username, @RequestParam String password) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> signup(@RequestParam String username, @RequestParam String password, @RequestParam String role) {
+        role = role.toUpperCase();
+
+        if (!role.equals("ADMIN") && !role.equals("USER")) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Invalid role: " + role));
+        }
 
         if (password == null || password.isBlank()) {
             return ResponseEntity
@@ -75,28 +83,34 @@ public class AuthController {
 
         User newUser = new User(
                 username,
-                passwordEncoder.encode(password), // Always hash the password
-                List.of("ROLE_USER")              // New users are regular users
+                passwordEncoder.encode(password),     // Always hash the password
+                role.equals("USER") ? List.of("ROLE_USER") : List.of("ROLE_USER", "ROLE_ADMIN")
         );
 
         userRepository.save(newUser);
 
-        var key = Keys.hmacShaKeyFor(SECRET.getBytes());
-
-        String token = Jwts.builder()
-                .subject(newUser.getUsername())
-                .claim("role", newUser.getRoles())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 3600_000)) // 1 hour
-                .signWith(key)
-                .compact();
-
         Map<String, String> responseBody = Map.of(
-                "token", token,
                 "user", newUser.getUsername(),
                 "roles", String.join(",", newUser.getRoles())
         );
 
-        return ResponseEntity.ok(responseBody);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseBody);
+    }
+
+    @DeleteMapping("/user/{username}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable String username) {
+
+        Optional<User> userOptional = userRepository.findByUsername(username);
+
+        if (userOptional.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found: " + username));
+        }
+
+        userRepository.delete(userOptional.get());
+
+        return ResponseEntity.noContent().build();
     }
 }

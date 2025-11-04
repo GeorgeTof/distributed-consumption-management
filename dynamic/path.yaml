@@ -11,11 +11,19 @@ http:
       entryPoints: [web]
       service: device-service
       middlewares: [jwt-auth]
-    
-    auth-api:
+
+    auth-api-public:
+      rule: "Host(`localhost`) && Path(`/auth/login`)"
+      entryPoints: [web]
+      service: auth-service
+      priority: 11 
+
+    auth-api-protected:
       rule: "Host(`localhost`) && PathPrefix(`/auth`)"
       entryPoints: [web]
       service: auth-service
+      middlewares: [jwt-auth]
+      priority: 10
 
   middlewares:
     jwt-auth:
