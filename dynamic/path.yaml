@@ -27,6 +27,13 @@ http:
       service: device-service
       priority: 50 
       middlewares: [jwt-auth]
+    
+    auth-swagger:
+      rule: "Host(`localhost`) && (PathPrefix(`/auth/swagger-ui`) || PathPrefix(`/auth/v3/api-docs`))"
+      entryPoints: [web]
+      service: auth-service
+      priority: 100 
+      middlewares: [common-strip-swagger]
 
     auth-api-public:
       rule: "Host(`localhost`) && Path(`/auth/login`)"
@@ -47,6 +54,7 @@ http:
         prefixes:
           - "/users"
           - "/devices"
+          - "/auth"
 
     jwt-auth:
       plugin:
