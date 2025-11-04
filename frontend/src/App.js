@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import './App.css';
 import { login } from './api';
+// Import our new dashboard components
+import AdminDashboard from './AdminDashboard';
+import UserDashboard from './UserDashboard';
 
 const USER_DATA_KEY = 'my-app-user-data';
 
@@ -90,17 +93,8 @@ function App() {
         </button>
         <hr />
         
-        {isAdmin && (
-          <div className="admin-dashboard">
-            <h3>Admin Dashboard</h3>
-            <p>You can see this because you are an admin.</p>
-          </div>
-        )}
-
-        <div className="user-dashboard">
-          <h3>User Dashboard (My Data)</h3>
-          <p>All logged-in users can see this.</p>
-        </div>
+        {isAdmin && <AdminDashboard />}
+        <UserDashboard />
       </div>
     </div>
   );
