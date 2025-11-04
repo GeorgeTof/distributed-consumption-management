@@ -77,3 +77,102 @@ button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
+
+/* Override default button styles for these */
+.dashboard-buttons button {
+  background-color: #17a2b8;
+  width: auto;
+  padding: 0.5rem 1rem;
+}
+
+.dashboard-buttons button:hover {
+  background-color: #138496;
+}
+
+.dashboard-buttons button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.data-display-area {
+  margin-top: 1.5rem;
+}
+
+/* --- User Profile Card --- */
+.user-profile-card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.user-profile-card h4 {
+  margin-top: 0;
+  color: #333;
+}
+
+.user-profile-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.user-profile-card li {
+  margin-bottom: 0.5rem;
+}
+
+/* --- Device List & Card --- */
+.device-list {
+  margin-top: 1rem;
+}
+
+.device-card {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.device-card h5 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.device-card ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.device-card li {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.device-controls {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.device-controls button {
+  width: auto;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.device-controls .btn-update {
+  background-color: #ffc107;
+  color: #333;
+}
+.device-controls .btn-update:hover {
+  background-color: #e0a800;
+}
+
+.device-controls .btn-delete {
+  background-color: #dc3545;
+}
+.device-controls .btn-delete:hover {
+  background-color: #c82333;
+}

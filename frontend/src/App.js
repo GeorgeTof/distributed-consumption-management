@@ -93,8 +93,8 @@ function App() {
         </button>
         <hr />
         
-        {isAdmin && <AdminDashboard />}
-        <UserDashboard />
+        <UserDashboard currentUser={currentUser} />
+        {isAdmin && <AdminDashboard currentUser={currentUser} />}
       </div>
     </div>
   );
