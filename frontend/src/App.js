@@ -2,10 +2,24 @@ import React, { useState } from 'react';
 import './App.css';
 import { login } from './api';
 
+const USER_DATA_KEY = 'my-app-user-data';
+
+function getSavedUserData() {
+  const savedData = localStorage.getItem(USER_DATA_KEY);
+  if (savedData) {
+    try {
+      return JSON.parse(savedData);
+    } catch (e) {
+      localStorage.removeItem(USER_DATA_KEY);
+    }
+  }
+  return null;
+}
+
 function App() {
+  const [currentUser, setCurrentUser] = useState(getSavedUserData());
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -14,50 +28,79 @@ function App() {
 
     try {
       const userData = await login(username, password);
-
-      setLoading(false);
-      console.log('Login Successful!', userData);
-      
-      alert(`Welcome, ${userData.user}! Roles: ${userData.roles}`);
-
+      localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+      setCurrentUser(userData);
+      setUsername('');
+      setPassword('');
     } catch (err) {
-      setLoading(false);
-      alert(err.message); 
+      alert(err.message);
     }
+    setLoading(false);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem(USER_DATA_KEY);
+    setCurrentUser(null);
+  };
+
+  if (!currentUser) {
+    return (
+      <div className="App">
+        <div className="login-container">
+          <form onSubmit={handleSubmit}>
+            <h2>Login</h2>
+            <div className="input-group">
+              <label htmlFor="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Loading...' : 'Login'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  const isAdmin = currentUser.roles.includes('ROLE_ADMIN');
 
   return (
     <div className="App">
-      <div className="login-container">
-        <form onSubmit={handleSubmit}>
-          <h2>Login</h2>
-
-          <div className="input-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+      <div className="dashboard-container">
+        <h2>Welcome, {currentUser.user}!</h2>
+        <p>Your role: {isAdmin ? 'Admin' : 'User'}</p>
+        <button onClick={handleLogout}>
+          Logout
+        </button>
+        <hr />
+        
+        {isAdmin && (
+          <div className="admin-dashboard">
+            <h3>Admin Dashboard</h3>
+            <p>You can see this because you are an admin.</p>
           </div>
+        )}
 
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" disabled={loading}>
-            {loading ? 'Loading...' : 'Login'}
-          </button>
-        </form>
+        <div className="user-dashboard">
+          <h3>User Dashboard (My Data)</h3>
+          <p>All logged-in users can see this.</p>
+        </div>
       </div>
     </div>
   );

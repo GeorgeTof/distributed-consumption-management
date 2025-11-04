@@ -18,6 +18,21 @@
   max-width: 400px;
 }
 
+.dashboard-container {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px; /* Make it wider than the login box */
+  text-align: left;
+}
+
+.dashboard-container button {
+  background-color: #dc3545;
+  margin-top: 1rem;
+}
+
 .login-container h2 {
   margin-bottom: 1.5rem;
   color: #333;
