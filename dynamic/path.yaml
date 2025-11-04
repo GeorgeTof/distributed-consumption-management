@@ -5,7 +5,7 @@ http:
       entryPoints: [web]
       service: user-service
       priority: 100 
-      middlewares: [user-strip-swagger] 
+      middlewares: [common-strip-swagger] 
 
     user-api:
       rule: "Host(`localhost`) && PathPrefix(`/users`)"
@@ -14,10 +14,18 @@ http:
       priority: 50
       middlewares: [jwt-auth]
 
+    device-swagger:
+      rule: "Host(`localhost`) && (PathPrefix(`/devices/swagger-ui`) || PathPrefix(`/devices/v3/api-docs`))"
+      entryPoints: [web]
+      service: device-service
+      priority: 100
+      middlewares: [common-strip-swagger] 
+
     device-api:
       rule: "Host(`localhost`) && PathPrefix(`/devices`)"
       entryPoints: [web]
       service: device-service
+      priority: 50 
       middlewares: [jwt-auth]
 
     auth-api-public:
@@ -34,10 +42,11 @@ http:
       priority: 10
 
   middlewares:
-    user-strip-swagger:
+    common-strip-swagger:
       stripPrefix:
         prefixes:
           - "/users"
+          - "/devices"
 
     jwt-auth:
       plugin:
