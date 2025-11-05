@@ -19,7 +19,6 @@ function DeviceCard({
       device.powerConsumed
     );
     
-    // Check if the user pressed "OK" and the value is not null
     if (newConsumption !== null) {
       const parsedValue = parseFloat(newConsumption);
       if (!isNaN(parsedValue)) {
@@ -28,7 +27,6 @@ function DeviceCard({
         alert("Invalid input. Please enter a number.");
       }
     }
-    // If newConsumption is null, the user pressed "Cancel", so we do nothing.
   };
 
   return (

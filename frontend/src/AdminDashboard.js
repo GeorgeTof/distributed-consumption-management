@@ -7,7 +7,8 @@ import {
   deleteAuthUser,
   deleteDevicesByUsername,
   deleteUser,
-  createDevice
+  createDevice,
+  updateUserEmail 
 } from './api';
 import DeviceCard from './components/DeviceCard';
 import UserCard from './components/UserCard';
@@ -82,6 +83,27 @@ function AdminDashboard({ currentUser }) {
     }
   };
 
+
+  const handleUpdateUser = async (userId, newEmail) => {
+    setLoading(true);
+    try {
+      const response = await updateUserEmail(currentUser.token, userId, newEmail);
+      const updatedUser = response.data;
+
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId ? updatedUser : user
+        )
+      );
+      
+      alert(`Successfully updated email for ID ${userId} to ${newEmail}`);
+
+    } catch (err) {
+      alert(`Error updating user email: ${err.message}`);
+    }
+    setLoading(false);
+  };
+
   const handleDeleteUser = async (user) => {
     if (!window.confirm(`Are you sure you want to delete user ${user.username}? This is irreversible.`)) {
       return;
@@ -104,9 +126,6 @@ function AdminDashboard({ currentUser }) {
     setLoading(false);
   };
 
-  const handleUpdateUser = (user) => {
-    alert(`(Placeholder) Updating user ${user.username}...`);
-  };
 
   const handleAddDeviceForUser = (user) => {
     setUserForDevice(user);

@@ -104,3 +104,12 @@ export async function createDevice(token, deviceData) {
     body: JSON.stringify(deviceData),
   });
 }
+
+export async function updateUserEmail(token, userId, newEmail) {
+  const body = { newEmail: newEmail };
+
+  return authFetch(`/users/${userId}/email`, token, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+}

@@ -4,7 +4,18 @@ function UserCard({ user, onUpdate, onAddDevice, onDelete }) {
   const formattedDate = new Date(user.registerDate).toLocaleString();
 
   const handleUpdate = () => {
-    onUpdate(user);
+    const newEmail = prompt(
+      `Update email for ${user.username}:`, 
+      user.email
+    );
+    
+    if (newEmail !== null && newEmail.trim() !== '') {
+      if (newEmail.includes('@') && newEmail.includes('.')) {
+        onUpdate(user.id, newEmail);
+      } else {
+        alert("Invalid email format. Please try again.");
+      }
+    }
   };
 
   const handleAddDevice = () => {
@@ -16,7 +27,7 @@ function UserCard({ user, onUpdate, onAddDevice, onDelete }) {
   };
 
   return (
-    <div className="user-profile-card"> {/* Reusing the same style */}
+    <div className="user-profile-card">
       <h5>{user.username}</h5>
       <ul>
         <li><strong>ID:</strong> {user.id}</li>
