@@ -57,3 +57,21 @@ export async function getMyProfile(token) {
 export async function getOwnDevices(token) {
   return authFetch('/devices', token);
 }
+
+export async function getAllDevices(token) {
+  return authFetch('/devices/all', token);
+}
+
+export async function deleteDevice(token, deviceId) {
+  return authFetch(`/devices/${deviceId}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export async function updateDeviceConsumption(token, deviceId, powerConsumed) {
+  const url = `/devices/${deviceId}/consumption?powerConsumed=${powerConsumed}`;
+  
+  return authFetch(url, token, {
+    method: 'PATCH',
+  });
+}

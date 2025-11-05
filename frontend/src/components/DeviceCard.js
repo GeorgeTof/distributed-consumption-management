@@ -1,17 +1,34 @@
 import React from 'react';
 
-
-function DeviceCard({ device, showAdminControls = false }) {
+function DeviceCard({ 
+  device, 
+  showAdminControls = false, 
+  onDelete, 
+  onUpdate 
+}) {
 
   const handleDelete = () => {
-    alert(`(Admin) Deleting device ${device.id}...`);
+    if (window.confirm(`Are you sure you want to delete ${device.name}?`)) {
+      onDelete(device.id);
+    }
   };
 
   const handleUpdate = () => {
-    const newConsumption = prompt(`Update consumption for ${device.name}:`, device.powerConsumed);
-    if (newConsumption) {
-      alert(`(Admin) Updating device ${device.id} to ${newConsumption}...`);
+    const newConsumption = prompt(
+      `Update consumption for ${device.name}:`, 
+      device.powerConsumed
+    );
+    
+    // Check if the user pressed "OK" and the value is not null
+    if (newConsumption !== null) {
+      const parsedValue = parseFloat(newConsumption);
+      if (!isNaN(parsedValue)) {
+        onUpdate(device.id, parsedValue);
+      } else {
+        alert("Invalid input. Please enter a number.");
+      }
     }
+    // If newConsumption is null, the user pressed "Cancel", so we do nothing.
   };
 
   return (
