@@ -132,7 +132,7 @@ services:
       # route all unmatched paths (/) to frontend
       - "traefik.http.routers.frontend.rule=Host(`localhost`) && PathPrefix(`/`)"
       
-      # priority lower than your API routes (10 and 11)
+      # priority lower than API routes (10 and 11)
       - "traefik.http.routers.frontend.priority=1" 
       
       # ginx listens on port 80 inside container
