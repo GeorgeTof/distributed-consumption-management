@@ -113,3 +113,50 @@ export async function updateUserEmail(token, userId, newEmail) {
     body: JSON.stringify(body),
   });
 }
+
+export async function createUserProfile(token, userProfileData) {
+  const result = await authFetch('/users', token, {
+    method: 'POST',
+    body: JSON.stringify(userProfileData),
+  });
+  
+  if (result.status === 201 && result.response) {
+    const locationHeader = result.response.headers.get('Location');
+    if (locationHeader) {
+      const idMatch = locationHeader.match(/\/(\d+)$/); 
+      if (idMatch && idMatch[1]) {
+        return { data: { id: parseInt(idMatch[1]) }, status: 201 };
+      }
+    }
+    throw new Error("User profile created successfully, but ID retrieval failed. Cannot proceed to Auth service.");
+  }
+
+  return result;
+}
+
+export async function signUpAuth(token, username, password, role) {
+  const body = new URLSearchParams();
+  body.append('username', username);
+  body.append('password', password);
+  body.append('role', role);
+
+  const response = await fetch('/auth/signup', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+
+  if (response.ok) {
+    return response.json(); 
+  }
+
+  try {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Authentication signup failed'); 
+  } catch (e) {
+    throw new Error('Authentication signup failed');
+  }
+}

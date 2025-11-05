@@ -8,11 +8,14 @@ import {
   deleteDevicesByUsername,
   deleteUser,
   createDevice,
-  updateUserEmail 
+  updateUserEmail,
+  createUserProfile,
+  signUpAuth
 } from './api';
 import DeviceCard from './components/DeviceCard';
 import UserCard from './components/UserCard';
 import AddDeviceModal from './components/AddDeviceModal';
+import AddUserModal from './components/AddUserModal';
 
 function AdminDashboard({ currentUser }) {
   const [devices, setDevices] = useState(null);
@@ -22,6 +25,8 @@ function AdminDashboard({ currentUser }) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userForDevice, setUserForDevice] = useState(null);
+
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
 
   const handleLoadDevices = async () => {
     setLoading(true);
@@ -83,7 +88,6 @@ function AdminDashboard({ currentUser }) {
     }
   };
 
-
   const handleUpdateUser = async (userId, newEmail) => {
     setLoading(true);
     try {
@@ -126,7 +130,6 @@ function AdminDashboard({ currentUser }) {
     setLoading(false);
   };
 
-
   const handleAddDeviceForUser = (user) => {
     setUserForDevice(user);
     setIsModalOpen(true);
@@ -149,6 +152,39 @@ function AdminDashboard({ currentUser }) {
     }
     setLoading(false);
   };
+  
+  const handleOpenNewUserModal = () => {
+    setIsNewUserModalOpen(true);
+  };
+
+  const handleCloseNewUserModal = () => {
+    setIsNewUserModalOpen(false);
+  };
+  
+  const handleCreateNewUser = async ({ profile, auth }) => {
+    setLoading(true);
+
+    try {
+      alert(`Step 1: Creating profile for ${profile.username}...`);
+      const profileResponse = await createUserProfile(currentUser.token, profile);
+      
+      if (profileResponse.status !== 201) {
+          throw new Error("User profile creation failed with an unexpected status.");
+      }
+      
+      alert(`Step 2: Creating credentials for ${auth.username}...`);
+      await signUpAuth(currentUser.token, auth.username, auth.password, auth.role);
+
+      alert(`Successfully created user ${profile.username} with role ${profile.role}.`);
+      handleCloseNewUserModal();
+      handleLoadUsers();
+      
+    } catch (err) {
+      alert(`Failed to create user: ${err.message}. Data may be inconsistent.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   return (
@@ -162,6 +198,9 @@ function AdminDashboard({ currentUser }) {
         </button>
         <button onClick={handleLoadUsers} disabled={loading}>
           Load All Users
+        </button>
+        <button onClick={handleOpenNewUserModal} disabled={loading}>
+          + Create New User
         </button>
       </div>
 
@@ -216,6 +255,12 @@ function AdminDashboard({ currentUser }) {
           user={userForDevice}
         />
       )}
+      
+      <AddUserModal
+        show={isNewUserModalOpen}
+        onClose={handleCloseNewUserModal}
+        onSubmit={handleCreateNewUser}
+      />
     </div>
   );
 }
