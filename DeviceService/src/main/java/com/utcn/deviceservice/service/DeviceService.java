@@ -7,6 +7,7 @@ import com.utcn.deviceservice.handlers.exceptions.model.ResourceNotFoundExceptio
 import com.utcn.deviceservice.model.Device;
 import com.utcn.deviceservice.repo.DeviceRepository;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -84,6 +85,16 @@ public class DeviceService {
 
         deviceRepository.deleteById(id);
         LOGGER.debug("Device with id {} was deleted from db", id);
+    }
+
+//    @Transactional
+    public void deleteDevicesByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            throw new BadRequestException("Username must not be empty.");
+        }
+
+        deviceRepository.deleteByOwnerUsername(username);
+        LOGGER.debug("All devices for user {} were deleted from db", username);
     }
 
     private void validateDeviceForCreation(DeviceDTO dto) {

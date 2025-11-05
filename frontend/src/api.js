@@ -35,7 +35,7 @@ async function authFetch(url, token, options = {}) {
   });
 
   if (response.ok) {
-    if (response.status === 204) {
+    if (response.status === 201 || response.status === 204) {
       return { data: null, status: response.status };
     }
     const data = await response.json();
@@ -73,5 +73,34 @@ export async function updateDeviceConsumption(token, deviceId, powerConsumed) {
   
   return authFetch(url, token, {
     method: 'PATCH',
+  });
+}
+
+export async function getAllUsers(token) {
+  return authFetch('/users/all', token);
+}
+
+export async function deleteUser(token, userId) {
+  return authFetch(`/users/${userId}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export async function deleteAuthUser(token, username) {
+  return authFetch(`/auth/user/${username}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export async function deleteDevicesByUsername(token, username) {
+  return authFetch(`/devices/by-user/${username}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export async function createDevice(token, deviceData) {
+  return authFetch('/devices', token, {
+    method: 'POST',
+    body: JSON.stringify(deviceData),
   });
 }

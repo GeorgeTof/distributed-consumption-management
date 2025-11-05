@@ -82,4 +82,11 @@ public class DeviceController {
         deviceService.deleteDevice(id);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/by-user/{username}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteDevicesByUser(@PathVariable String username) {
+        deviceService.deleteDevicesByUsername(username);
+        return ResponseEntity.noContent().build();
+    }
 }
