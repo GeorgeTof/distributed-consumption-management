@@ -24,6 +24,19 @@ services:
     networks:
       demo_net:
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"     # Exposed for Desktop Simulator
+      - "15672:15672"   # Management Dashboard
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      demo_net:
+
   users-db:
     image: postgres
     container_name: users-db
@@ -60,6 +73,19 @@ services:
       POSTGRES_DB: auth-db
     volumes:
       - auth-data:/var/lib/postgresql/data
+    networks:
+      demo_net:
+
+  monitor-db:
+    image: postgres
+    container_name: monitor-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: monitor-db
+    volumes:
+      - monitor-data:/var/lib/postgresql/data
     networks:
       demo_net:
 
@@ -144,6 +170,7 @@ volumes:
   devices-data:
   traefik_logs:
   auth-data:
+  monitor-data:
 
 networks:
   demo_net:
