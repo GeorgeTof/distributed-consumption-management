@@ -8,15 +8,19 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class SensorConsumer {
 
     private final SensorRecordRepository repository;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    // Formatter matching your Simulator's output
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private final Map<Long, List<Double>> deviceBuffer = new ConcurrentHashMap<>();
 
     public SensorConsumer(SensorRecordRepository repository) {
         this.repository = repository;
@@ -27,24 +31,41 @@ public class SensorConsumer {
         try {
             Map<String, Object> message = objectMapper.readValue(jsonMessage, Map.class);
 
-            SensorRecord record = new SensorRecord();
-
             Object deviceIdObj = message.get("device_id");
-            record.setDeviceId(Long.parseLong(deviceIdObj.toString()));
+            Long deviceId = Long.parseLong(deviceIdObj.toString());
 
             Object measurementObj = message.get("measurement_value");
-            record.setMeasurement(Double.parseDouble(measurementObj.toString()));
+            Double measurement = Double.parseDouble(measurementObj.toString());
 
             String timestampStr = (String) message.get("timestamp");
-            LocalDateTime dt = LocalDateTime.parse(timestampStr, formatter);
 
-            record.setYear(dt.getYear());
-            record.setMonth(dt.getMonthValue());
-            record.setDay(dt.getDayOfMonth());
-            record.setHour(dt.getHour());
+            deviceBuffer.putIfAbsent(deviceId, new ArrayList<>());
+            List<Double> buffer = deviceBuffer.get(deviceId);
 
-            repository.save(record);
-            System.out.println("Saved: Device " + record.getDeviceId() + " at " + record.getHour() + ":00");
+            synchronized (buffer) {
+                buffer.add(measurement);
+
+                System.out.println("Buffer for Device " + deviceId + ": " + buffer.size() + "/6");
+
+                if (buffer.size() >= 6) {
+                    double totalHourlyConsumption = buffer.stream().mapToDouble(Double::doubleValue).sum();
+
+                    SensorRecord record = new SensorRecord();
+                    record.setDeviceId(deviceId);
+                    record.setMeasurement(totalHourlyConsumption);
+
+                    LocalDateTime dt = LocalDateTime.parse(timestampStr, formatter);
+                    record.setYear(dt.getYear());
+                    record.setMonth(dt.getMonthValue());
+                    record.setDay(dt.getDayOfMonth());
+                    record.setHour(dt.getHour());
+
+                    repository.save(record);
+                    System.out.println(">>> SAVED HOURLY AGGREGATE for Device " + deviceId + ": " + totalHourlyConsumption);
+
+                    buffer.clear();
+                }
+            }
 
         } catch (Exception e) {
             System.err.println("Error processing message: " + jsonMessage);
