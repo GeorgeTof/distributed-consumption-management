@@ -41,7 +41,7 @@ public class MonitorController {
                 entity.getYear(),
                 entity.getMonth(),
                 entity.getDay(),
-                entity.getMonth()
+                entity.getHour()
         );
     }
 }
