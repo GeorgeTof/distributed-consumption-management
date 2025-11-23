@@ -19,12 +19,14 @@ public class SensorReadingProducer {
 
     private final List<String> deviceIds = Arrays.asList(   // TODO update to real devices
             "1111",
+            "3",
             "2222",
             "3333"
     );
 
     private final List<Integer> maxConsumptions = Arrays.asList(
             60,
+            5,
             120,
             80
     );

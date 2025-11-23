@@ -26,7 +26,7 @@ public class SensorConsumer {
         this.repository = repository;
     }
 
-    @RabbitListener(queues = "${app.queue.name}")
+    @RabbitListener(queues = "${app.queue.name}", containerFactory = "sensorContainerFactory")
     public void receiveMessage(String jsonMessage) {
         try {
             Map<String, Object> message = objectMapper.readValue(jsonMessage, Map.class);
