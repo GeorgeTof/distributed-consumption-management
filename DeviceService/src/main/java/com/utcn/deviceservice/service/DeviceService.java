@@ -1,5 +1,7 @@
 package com.utcn.deviceservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.utcn.deviceservice.config.RabbitConfig;
 import com.utcn.deviceservice.dto.DeviceDTO;
 import com.utcn.deviceservice.dto.builders.DeviceBuilder;
 import com.utcn.deviceservice.handlers.exceptions.model.BadRequestException;
@@ -7,12 +9,14 @@ import com.utcn.deviceservice.handlers.exceptions.model.ResourceNotFoundExceptio
 import com.utcn.deviceservice.model.Device;
 import com.utcn.deviceservice.repo.DeviceRepository;
 
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -20,11 +24,14 @@ import java.util.stream.Collectors;
 public class DeviceService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceService.class);
     private final DeviceRepository deviceRepository;
+    private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
 
-    public DeviceService(DeviceRepository deviceRepository) {
+    public DeviceService(DeviceRepository deviceRepository, RabbitTemplate rabbitTemplate, ObjectMapper objectMapper) {
         this.deviceRepository = deviceRepository;
+        this.rabbitTemplate = rabbitTemplate;
+        this.objectMapper = objectMapper;
     }
-
     public List<DeviceDTO> findDevices() {
         List<Device> deviceList = deviceRepository.findAll();
 
@@ -52,6 +59,21 @@ public class DeviceService {
 
         device = deviceRepository.save(device);
         LOGGER.debug("Device with id {} was inserted in db", device.getId());
+
+        try {
+            Map<String, Object> eventMessage = new HashMap<>();
+            eventMessage.put("deviceId", device.getId());
+//            eventMessage.put("userUsername", device.getOwnerUsername());
+
+            String jsonPayload = objectMapper.writeValueAsString(eventMessage);
+
+            rabbitTemplate.convertAndSend(RabbitConfig.DEVICE_EVENTS_QUEUE, jsonPayload);
+            LOGGER.info("Published Device Created Event for ID: {}", device.getId());
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to send Device Created event to RabbitMQ", e);
+        }
+
         return device.getId();
     }
 
