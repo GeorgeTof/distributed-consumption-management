@@ -19,9 +19,9 @@ public class SensorReadingProducer {
 
     // 1. Hardcoded list of Device IDs (Replace these with UUIDs from your DB later)
     private final List<String> deviceIds = Arrays.asList(   // TODO update to real devices
-            "ID-1111",
-            "ID-2222",
-            "ID-3333"
+            "1111",
+            "2222",
+            "3333"
     );
 
     private LocalDateTime currentSimulatedTime = LocalDateTime.now();
