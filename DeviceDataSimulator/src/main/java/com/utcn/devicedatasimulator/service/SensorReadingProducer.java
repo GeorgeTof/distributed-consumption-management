@@ -17,11 +17,24 @@ public class SensorReadingProducer {
     private final Random random = new Random();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // 1. Hardcoded list of Device IDs (Replace these with UUIDs from your DB later)
     private final List<String> deviceIds = Arrays.asList(   // TODO update to real devices
             "1111",
             "2222",
             "3333"
+    );
+
+    private final List<Integer> maxConsumptions = Arrays.asList(
+            60,
+            120,
+            80
+    );
+
+    private final List<Integer> heavyHours = Arrays.asList(
+            6,
+            7,
+            17,
+            18,
+            19
     );
 
     private LocalDateTime currentSimulatedTime = LocalDateTime.now();
@@ -36,8 +49,11 @@ public class SensorReadingProducer {
             currentSimulatedTime = currentSimulatedTime.plusMinutes(10);
             String timestampStr = currentSimulatedTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-            for (String deviceId : deviceIds) {
-                double measurement = 20 + random.nextDouble() * 10;
+            for (int i = 0; i < deviceIds.size(); i++) {
+                String deviceId = deviceIds.get(i);
+                double scaleFactorByHour = heavyHours.contains(currentSimulatedTime.getHour()) ? 1.0 : 0.7;
+                double measurement = random.nextDouble() * maxConsumptions.get(i) * scaleFactorByHour;
+                measurement = Math.round(measurement * 10000.0) / 10000.0;
 
                 Map<String, Object> data = new HashMap<>();
                 data.put("timestamp", timestampStr);
