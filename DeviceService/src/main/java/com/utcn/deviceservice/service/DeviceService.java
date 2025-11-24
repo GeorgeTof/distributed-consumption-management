@@ -64,7 +64,7 @@ public class DeviceService {
             Map<String, Object> eventMessage = new HashMap<>();
             eventMessage.put("eventType", "DEVICE_CREATED"); // TODO check if type is really needed
             eventMessage.put("deviceId", device.getId());
-//            eventMessage.put("userUsername", device.getOwnerUsername());
+//            eventMessage.put("userUsername", device.getOwnerUsername()); // may want to enforce security
 
             String jsonPayload = objectMapper.writeValueAsString(eventMessage);
 
@@ -108,6 +108,17 @@ public class DeviceService {
 
         deviceRepository.deleteById(id);
         LOGGER.debug("Device with id {} was deleted from db", id);
+
+        try {
+            Map<String, Object> eventMessage = new HashMap<>();
+            eventMessage.put("eventType", "DEVICE_DELETED");
+            eventMessage.put("deviceId", id);
+            String jsonPayload = objectMapper.writeValueAsString(eventMessage);
+            rabbitTemplate.convertAndSend(RabbitConfig.INTERNAL_EXCHANGE, "device.deleted", jsonPayload);
+            LOGGER.info("Published Device Deleted Event for ID: {}", id);
+        } catch (Exception e) {
+            LOGGER.error("Failed to send Device Deleted event", e);
+        }
     }
 
 //    @Transactional

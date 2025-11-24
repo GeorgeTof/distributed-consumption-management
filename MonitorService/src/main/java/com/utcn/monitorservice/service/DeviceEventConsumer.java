@@ -26,15 +26,21 @@ public class DeviceEventConsumer {
             Map<String, Object> message = objectMapper.readValue(jsonMessage, Map.class);
             String eventType = (String) message.get("eventType");
 
-            if ("DEVICE_CREATED".equals(eventType)) {
-                Object deviceIdObj = message.get("deviceId");
-                Long deviceId = Long.parseLong(deviceIdObj.toString());
-                // may want to also get the device owner username
+            Object deviceIdObj = message.get("deviceId");
+            Long deviceId = Long.parseLong(deviceIdObj.toString());
 
+            if ("DEVICE_CREATED".equals(eventType)) {
                 ValidDevice validDevice = new ValidDevice(deviceId);
                 repository.save(validDevice);
-
                 System.out.println(">>> Synced: Added Device ID " + deviceId);
+
+            } else if ("DEVICE_DELETED".equals(eventType)) {
+                if (repository.existsById(deviceId)) {
+                    repository.deleteById(deviceId);
+                    System.out.println(">>> Synced: Removed Device ID " + deviceId);
+                } else {
+                    System.out.println(">>> Synced: Ignored Delete for unknown Device ID " + deviceId);
+                }
             }
 
         } catch (Exception e) {
