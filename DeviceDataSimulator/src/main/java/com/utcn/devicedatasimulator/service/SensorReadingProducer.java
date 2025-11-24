@@ -17,18 +17,23 @@ public class SensorReadingProducer {
     private final Random random = new Random();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /*
+    6 - lawnmower   - 70
+    7 - Iphone      - 34
+     */
+
     private final List<String> deviceIds = Arrays.asList(   // TODO update to real devices
             "1111",
             "3",
-            "2222",
-            "3333"
+            "6",
+            "7"
     );
 
     private final List<Integer> maxConsumptions = Arrays.asList(
             60,
             5,
-            120,
-            80
+            70,
+            34
     );
 
     private final List<Integer> heavyHours = Arrays.asList(
