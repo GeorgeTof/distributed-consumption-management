@@ -3,6 +3,7 @@ package com.utcn.monitorservice.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.utcn.monitorservice.model.SensorRecord;
 import com.utcn.monitorservice.repo.SensorRecordRepository;
+import com.utcn.monitorservice.repo.ValidDeviceRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SensorConsumer {
 
     private final SensorRecordRepository repository;
+    private final ValidDeviceRepository validDeviceRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+
     private final Map<Long, List<Double>> deviceBuffer = new ConcurrentHashMap<>();
 
-    public SensorConsumer(SensorRecordRepository repository) {
+    public SensorConsumer(SensorRecordRepository repository, ValidDeviceRepository validDeviceRepository) {
         this.repository = repository;
+        this.validDeviceRepository = validDeviceRepository;
     }
 
     @RabbitListener(queues = "${app.queue.name}", containerFactory = "sensorContainerFactory")
@@ -34,9 +38,13 @@ public class SensorConsumer {
             Object deviceIdObj = message.get("device_id");
             Long deviceId = Long.parseLong(deviceIdObj.toString());
 
+            if (!validDeviceRepository.existsById(deviceId)) {
+                System.out.println("Received data for unknown Device ID: " + deviceId + ". Discarding.");
+                return;
+            }
+
             Object measurementObj = message.get("measurement_value");
             Double measurement = Double.parseDouble(measurementObj.toString());
-
             String timestampStr = (String) message.get("timestamp");
 
             deviceBuffer.putIfAbsent(deviceId, new ArrayList<>());
