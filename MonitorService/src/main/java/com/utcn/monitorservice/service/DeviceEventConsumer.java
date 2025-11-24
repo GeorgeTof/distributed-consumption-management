@@ -24,14 +24,18 @@ public class DeviceEventConsumer {
             System.out.println("Received Device Event: " + jsonMessage);
 
             Map<String, Object> message = objectMapper.readValue(jsonMessage, Map.class);
+            String eventType = (String) message.get("eventType");
 
-            Object deviceIdObj = message.get("deviceId");
-            Long deviceId = Long.parseLong(deviceIdObj.toString());
+            if ("DEVICE_CREATED".equals(eventType)) {
+                Object deviceIdObj = message.get("deviceId");
+                Long deviceId = Long.parseLong(deviceIdObj.toString());
+                // may want to also get the device owner username
 
-            ValidDevice validDevice = new ValidDevice(deviceId);
-            repository.save(validDevice);
+                ValidDevice validDevice = new ValidDevice(deviceId);
+                repository.save(validDevice);
 
-            System.out.println(">>> Synced New Device ID to Monitor DB: " + deviceId);
+                System.out.println(">>> Synced: Added Device ID " + deviceId);
+            }
 
         } catch (Exception e) {
             System.err.println("Error processing device event: " + jsonMessage);

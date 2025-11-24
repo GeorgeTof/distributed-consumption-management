@@ -62,12 +62,13 @@ public class DeviceService {
 
         try {
             Map<String, Object> eventMessage = new HashMap<>();
+            eventMessage.put("eventType", "DEVICE_CREATED"); // TODO check if type is really needed
             eventMessage.put("deviceId", device.getId());
 //            eventMessage.put("userUsername", device.getOwnerUsername());
 
             String jsonPayload = objectMapper.writeValueAsString(eventMessage);
 
-            rabbitTemplate.convertAndSend(RabbitConfig.DEVICE_EVENTS_QUEUE, jsonPayload);
+            rabbitTemplate.convertAndSend(RabbitConfig.INTERNAL_EXCHANGE, "device.created", jsonPayload);
             LOGGER.info("Published Device Created Event for ID: {}", device.getId());
 
         } catch (Exception e) {

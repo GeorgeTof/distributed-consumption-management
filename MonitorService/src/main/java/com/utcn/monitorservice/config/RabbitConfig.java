@@ -1,10 +1,13 @@
 package com.utcn.monitorservice.config;
 
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin; // Import this
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +20,9 @@ public class RabbitConfig {
 
     @Value("${app.queue.name}")
     private String sensorQueueName;
+
+    @Value("${internal.exchange.name}")
+    private String internalExchangeName;
 
     @Value("${internal.queue.name}")
     private String internalQueueName;
@@ -67,7 +73,7 @@ public class RabbitConfig {
     }
 
     // ========================================================================
-    // BROKER 2: INTERNAL EVENTS
+    // BROKER 2: INTERNAL EVENTS (Topic Exchange)
     // ========================================================================
     @Bean(name = "internalConnectionFactory")
     public ConnectionFactory internalConnectionFactory(
@@ -102,9 +108,26 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Queue deviceEventsQueue(@Qualifier("internalAdmin") RabbitAdmin internalAdmin) {
-        Queue queue = new Queue(internalQueueName, true);
-        queue.setAdminsThatShouldDeclare(internalAdmin); // This ensures it is created on the correct broker
-        return queue;
+    public TopicExchange internalExchange() {
+        return new TopicExchange(internalExchangeName);
+    }
+
+    @Bean
+    public Queue monitorEventsQueue() {
+        return new Queue(internalQueueName, true);
+    }
+
+    @Bean
+    public Binding binding(@Qualifier("internalAdmin") RabbitAdmin internalAdmin) {
+        Binding binding = BindingBuilder
+                .bind(monitorEventsQueue())
+                .to(internalExchange())
+                .with("device.#"); // Listen to all device related events
+
+        binding.setAdminsThatShouldDeclare(internalAdmin);
+        internalExchange().setAdminsThatShouldDeclare(internalAdmin);
+        monitorEventsQueue().setAdminsThatShouldDeclare(internalAdmin);
+
+        return binding;
     }
 }

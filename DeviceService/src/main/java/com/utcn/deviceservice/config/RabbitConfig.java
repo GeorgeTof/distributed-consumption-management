@@ -1,16 +1,16 @@
 package com.utcn.deviceservice.config;
 
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
 
-    public static final String DEVICE_EVENTS_QUEUE = "device.events.queue";
+    public static final String INTERNAL_EXCHANGE = "internal.exchange";
 
     @Bean
-    public Queue deviceEventsQueue() {
-        return new Queue(DEVICE_EVENTS_QUEUE, true);
+    public TopicExchange internalExchange() {
+        return new TopicExchange(INTERNAL_EXCHANGE);
     }
 }
