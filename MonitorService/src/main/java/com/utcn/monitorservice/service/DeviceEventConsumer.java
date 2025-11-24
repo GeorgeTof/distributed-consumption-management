@@ -2,7 +2,9 @@ package com.utcn.monitorservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.utcn.monitorservice.model.ValidDevice;
+import com.utcn.monitorservice.repo.SensorRecordRepository;
 import com.utcn.monitorservice.repo.ValidDeviceRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
@@ -11,13 +13,16 @@ import java.util.Map;
 @Service
 public class DeviceEventConsumer {
 
-    private final ValidDeviceRepository repository;
+    private final ValidDeviceRepository validDeviceRepository;
+    private final SensorRecordRepository sensorRecordRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public DeviceEventConsumer(ValidDeviceRepository repository) {
-        this.repository = repository;
+    public DeviceEventConsumer(ValidDeviceRepository repository, SensorRecordRepository sensorRecordRepository) {
+        this.validDeviceRepository = repository;
+        this.sensorRecordRepository = sensorRecordRepository;
     }
 
+    @Transactional
     @RabbitListener(queues = "${internal.queue.name}", containerFactory = "internalContainerFactory")
     public void receiveDeviceEvent(String jsonMessage) {
         try {
@@ -31,13 +36,15 @@ public class DeviceEventConsumer {
 
             if ("DEVICE_CREATED".equals(eventType)) {
                 ValidDevice validDevice = new ValidDevice(deviceId);
-                repository.save(validDevice);
+                validDeviceRepository.save(validDevice);
                 System.out.println(">>> Synced: Added Device ID " + deviceId);
 
             } else if ("DEVICE_DELETED".equals(eventType)) {
-                if (repository.existsById(deviceId)) {
-                    repository.deleteById(deviceId);
+                if (validDeviceRepository.existsById(deviceId)) {
+                    validDeviceRepository.deleteById(deviceId);
                     System.out.println(">>> Synced: Removed Device ID " + deviceId);
+                    sensorRecordRepository.deleteByDeviceId(deviceId);
+                    System.out.println(">>> Synced: Deleted all sensor measurements for Device ID " + deviceId);
                 } else {
                     System.out.println(">>> Synced: Ignored Delete for unknown Device ID " + deviceId);
                 }
