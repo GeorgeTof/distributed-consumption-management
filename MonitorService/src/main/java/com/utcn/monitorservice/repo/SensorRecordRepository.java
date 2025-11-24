@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface SensorRecordRepository extends JpaRepository<SensorRecord, Long> {
     List<SensorRecord> findByDeviceId(Long deviceId);
+    List<SensorRecord> findByDeviceIdAndYearAndMonthAndDay(Long deviceId, int year, int month, int day);
 }

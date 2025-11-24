@@ -2,21 +2,24 @@ package com.utcn.monitorservice.controller;
 
 import com.utcn.monitorservice.dto.SensorRecordDTO;
 import com.utcn.monitorservice.model.SensorRecord;
+import com.utcn.monitorservice.model.ValidDevice;
 import com.utcn.monitorservice.repo.SensorRecordRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import com.utcn.monitorservice.repo.ValidDeviceRepository;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/monitor")
 public class MonitorController {
 
     private final SensorRecordRepository repository;
+    private final ValidDeviceRepository validDeviceRepository;
 
-    public MonitorController(SensorRecordRepository repository) {
+    public MonitorController(SensorRecordRepository repository, ValidDeviceRepository validDeviceRepository) {
         this.repository = repository;
+        this.validDeviceRepository = validDeviceRepository;
     }
 
     @GetMapping("/all")
@@ -30,6 +33,27 @@ public class MonitorController {
     public List<SensorRecordDTO> getByDevice(@PathVariable Long id) {
         return repository.findByDeviceId(id).stream()
                 .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/history")
+    public List<SensorRecordDTO> getDeviceHistory(
+            @RequestParam Long deviceId,
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam int day) {
+
+        return repository.findByDeviceIdAndYearAndMonthAndDay(deviceId, year, month, day)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/valid-devices")
+    public List<Long> getAllValidDeviceIds() {
+        // Fetch all ValidDevice entities and map them to just the Long ID
+        return validDeviceRepository.findAll().stream()
+                .map(ValidDevice::getDeviceId)
                 .collect(Collectors.toList());
     }
 
