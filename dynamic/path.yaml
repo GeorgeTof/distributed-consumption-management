@@ -48,6 +48,20 @@ http:
       middlewares: [jwt-auth]
       priority: 10
 
+    monitor-swagger:
+      rule: "Host(`localhost`) && (PathPrefix(`/monitor/swagger-ui`) || PathPrefix(`/monitor/v3/api-docs`))"
+      entryPoints: [web]
+      service: monitor-service
+      priority: 100 
+      middlewares: [common-strip-swagger] 
+
+    monitor-api:
+      rule: "Host(`localhost`) && PathPrefix(`/monitor`)"
+      entryPoints: [web]
+      service: monitor-service
+      priority: 50 
+      middlewares: [jwt-auth]
+
   middlewares:
     common-strip-swagger:
       stripPrefix:
@@ -55,6 +69,7 @@ http:
           - "/users"
           - "/devices"
           - "/auth"
+          - "/monitor"
 
     jwt-auth:
       plugin:
@@ -83,3 +98,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://auth-service:8081"
+    monitor-service:
+      loadBalancer:
+        servers:
+          - url: "http://monitor-service:8080"

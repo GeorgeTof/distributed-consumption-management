@@ -5,6 +5,7 @@ import com.utcn.monitorservice.model.SensorRecord;
 import com.utcn.monitorservice.model.ValidDevice;
 import com.utcn.monitorservice.repo.SensorRecordRepository;
 import com.utcn.monitorservice.repo.ValidDeviceRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class MonitorController {
     }
 
     @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<SensorRecordDTO> getAllMeasurements() {
         return repository.findAll().stream()
                 .map(this::convertToDTO)
@@ -30,6 +32,7 @@ public class MonitorController {
     }
 
     @GetMapping("/device/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<SensorRecordDTO> getByDevice(@PathVariable Long id) {
         return repository.findByDeviceId(id).stream()
                 .map(this::convertToDTO)
@@ -37,6 +40,7 @@ public class MonitorController {
     }
 
     @GetMapping("/history")
+    @PreAuthorize("hasRole('USER')")
     public List<SensorRecordDTO> getDeviceHistory(
             @RequestParam Long deviceId,
             @RequestParam int year,
@@ -50,8 +54,8 @@ public class MonitorController {
     }
 
     @GetMapping("/valid-devices")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Long> getAllValidDeviceIds() {
-        // Fetch all ValidDevice entities and map them to just the Long ID
         return validDeviceRepository.findAll().stream()
                 .map(ValidDevice::getDeviceId)
                 .collect(Collectors.toList());
