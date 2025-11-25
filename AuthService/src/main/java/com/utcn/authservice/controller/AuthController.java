@@ -139,6 +139,21 @@ public class AuthController {
 
         userRepository.delete(userOptional.get());
 
+        try {
+            Map<String, Object> eventMessage = new HashMap<>();
+            eventMessage.put("eventType", "USER_DELETED");
+            eventMessage.put("username", username);
+
+            String jsonPayload = objectMapper.writeValueAsString(eventMessage);
+
+            rabbitTemplate.convertAndSend(internalExchange, "user.deleted", jsonPayload);
+
+            System.out.println(">>> Published User Deleted Event: " + username);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return ResponseEntity.noContent().build();
     }
 }

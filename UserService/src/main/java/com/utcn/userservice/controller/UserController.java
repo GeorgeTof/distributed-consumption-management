@@ -73,11 +73,18 @@ public class UserController {
         return ResponseEntity.created(location).body(response);
     }
 
+    /**
+     * @deprecated Use DELETE /auth/user/{username} via Auth Service.
+     */
+    @Deprecated
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+
+        return ResponseEntity.noContent()
+                .header("Warning", "DEPRECATED: Use DELETE /auth/user/{username} via Auth Service")
+                .build();
     }
 
     @PutMapping("/{id}/email")

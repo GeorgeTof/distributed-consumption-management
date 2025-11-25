@@ -28,7 +28,9 @@ public class UserSyncConsumer {
             if ("USER_CREATED".equals(eventType)) {
                 syncUserCreation(message);
             }
-            // TODO add user deleted
+            else if ("USER_DELETED".equals(eventType)) {
+                syncUserDeletion(message);
+            }
 
         } catch (Exception e) {
             System.err.println("Failed to sync user event: " + jsonMessage);
@@ -59,5 +61,16 @@ public class UserSyncConsumer {
 
         userRepository.save(user);
         System.out.println(">>> Synced: Created User " + username + " in User DB.");
+    }
+
+    private void syncUserDeletion(Map<String, Object> message) {
+        String username = (String) message.get("username");
+
+        userRepository.findByUsername(username).ifPresentOrElse(user -> {
+            userRepository.delete(user);
+            System.out.println(">>> Synced: Deleted User " + username + " from User DB.");
+        }, () -> {
+            System.out.println(">>> Synced: User " + username + " not found in User DB. Ignoring delete.");
+        });
     }
 }
