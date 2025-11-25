@@ -1,19 +1,21 @@
 package com.utcn.authservice.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.utcn.authservice.config.RabbitConfig;
+import com.utcn.authservice.dto.RegisterRequest;
 import com.utcn.authservice.model.User;
 import com.utcn.authservice.repo.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -25,9 +27,17 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
+
+    @Value("${internal.exchange.name}")
+    private String internalExchange;
+
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, RabbitTemplate rabbitTemplate, ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.rabbitTemplate = rabbitTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping("/login")
@@ -61,40 +71,58 @@ public class AuthController {
     @PostMapping("/signup")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> signup(@RequestParam String username, @RequestParam String password, @RequestParam String role) {
-        role = role.toUpperCase();
+        return ResponseEntity.badRequest().body("Deprecated. Please use /auth/register");
+    }
 
+    @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        if (request.password() == null || request.password().length() < 6) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least 6 characters long"));
+        }
+
+        if (request.age() == null || request.age() < 18) {
+            return ResponseEntity.badRequest().body(Map.of("error", "User must be at least 18 years old."));
+        }
+
+        String role = request.role().toUpperCase();
         if (!role.equals("ADMIN") && !role.equals("USER")) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "Invalid role: " + role));
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + role));
         }
 
-        if (password == null || password.isBlank()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "Password cannot be empty"));
-        }
-
-        if (password.length() < 6) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", "Password must be at least 6 characters long"));
+        if (userRepository.findByUsername(request.username()).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Username '" + request.username() + "' is already taken."));
         }
 
         User newUser = new User(
-                username,
-                passwordEncoder.encode(password),     // Always hash the password
+                request.username(),
+                passwordEncoder.encode(request.password()),
                 role.equals("USER") ? List.of("ROLE_USER") : List.of("ROLE_USER", "ROLE_ADMIN")
         );
-
         userRepository.save(newUser);
 
-        Map<String, String> responseBody = Map.of(
-                "user", newUser.getUsername(),
-                "roles", String.join(",", newUser.getRoles())
-        );
+        try {
+            Map<String, Object> eventMessage = new HashMap<>();
+            eventMessage.put("eventType", "USER_CREATED");
+            eventMessage.put("username", request.username());
+            eventMessage.put("email", request.email());
+            eventMessage.put("role", role);
+            eventMessage.put("age", request.age());
+            eventMessage.put("town", request.town());
+            eventMessage.put("registerDate", new Date().toString());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseBody);
+            String jsonPayload = objectMapper.writeValueAsString(eventMessage);
+
+            rabbitTemplate.convertAndSend(internalExchange, "user.created", jsonPayload);
+
+            System.out.println(">>> Published User Created Event: " + request.username());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "User saved but failed to sync profile."));
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "User registered successfully"));
     }
 
     @DeleteMapping("/user/{username}")
