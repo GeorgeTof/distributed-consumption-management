@@ -25,6 +25,8 @@ function UserDashboard({ currentUser }) {
   const [isEnergyModalOpen, setIsEnergyModalOpen] = useState(false);
   const [selectedDateDisplay, setSelectedDateDisplay] = useState('');
 
+  const [targetDeviceId, setTargetDeviceId] = useState(null);
+
   const handleLoadProfile = async () => {
     setLoading(true);
     setError(null);
@@ -55,16 +57,17 @@ function UserDashboard({ currentUser }) {
     setLoading(false);
   };
 
-  const handleOpenEnergyModal = () => {
+  const handleOpenEnergyModal = (deviceId = null) => {
+    setTargetDeviceId(deviceId); // null == "All Devices"
     setIsEnergyModalOpen(true);
   };
 
   const handleCloseEnergyModal = () => {
     setIsEnergyModalOpen(false);
+    setTargetDeviceId(null);
   };
 
   const handleEnergyDateSubmit = async (dateStr) => {
-    // input type="date" as "YYYY-MM-DD"
     setIsEnergyModalOpen(false);
     
     const [yearStr, monthStr, dayStr] = dateStr.split('-');
@@ -81,38 +84,52 @@ function UserDashboard({ currentUser }) {
       const month = parseInt(monthStr, 10);
       const day = parseInt(dayStr, 10);
 
-      const devicesResponse = await getOwnDevices(currentUser.token);
-      const myDevices = devicesResponse.data;
-
-      if (!myDevices || myDevices.length === 0) {
-        alert("You have no devices to monitor.");
-        setLoading(false);
-        return;
-      }
-
-      const historyPromises = myDevices.map(device => 
-        getDeviceHistory(currentUser.token, device.id, year, month, day)
-          .then(res => res.data)
-          .catch(err => {
-             console.error(`Failed to fetch history for device ${device.id}`, err);
-             return []; // Return empty array on error so Promise.all doesn't fail
-          })
-      );
-
-      const allHistories = await Promise.all(historyPromises);
-
       const hourlyTotals = Array.from({ length: 24 }, (_, i) => ({
         hour: i,
         totalConsumption: 0
       }));
 
-      allHistories.forEach(deviceHistory => {
-        deviceHistory.forEach(record => {
+      // SCENARIO A: Single Device Selected
+      if (targetDeviceId) {
+        const historyResponse = await getDeviceHistory(currentUser.token, targetDeviceId, year, month, day);
+        const history = historyResponse.data;
+
+        history.forEach(record => {
           if (record.hour >= 0 && record.hour < 24) {
-            hourlyTotals[record.hour].totalConsumption += record.measurement;
+             hourlyTotals[record.hour].totalConsumption += record.measurement;
           }
         });
-      });
+      } 
+      // SCENARIO B: All Devices
+      else {
+        const devicesResponse = await getOwnDevices(currentUser.token);
+        const myDevices = devicesResponse.data;
+
+        if (!myDevices || myDevices.length === 0) {
+          alert("You have no devices to monitor.");
+          setLoading(false);
+          return;
+        }
+
+        const historyPromises = myDevices.map(device => 
+          getDeviceHistory(currentUser.token, device.id, year, month, day)
+            .then(res => res.data)
+            .catch(err => {
+               console.error(`Failed to fetch history for device ${device.id}`, err);
+               return [];
+            })
+        );
+
+        const allHistories = await Promise.all(historyPromises);
+
+        allHistories.forEach(deviceHistory => {
+          deviceHistory.forEach(record => {
+            if (record.hour >= 0 && record.hour < 24) {
+              hourlyTotals[record.hour].totalConsumption += record.measurement;
+            }
+          });
+        });
+      }
 
       setChartData(hourlyTotals);
 
@@ -136,7 +153,7 @@ function UserDashboard({ currentUser }) {
         <button onClick={handleLoadDevices} disabled={loading}>
           Load My Devices
         </button>
-        <button onClick={handleOpenEnergyModal} disabled={loading} style={{ marginLeft: '10px' }}>
+        <button onClick={() => handleOpenEnergyModal(null)} disabled={loading} style={{ marginLeft: '10px' }}>
           Show My Energy Consumption
         </button>
       </div>
@@ -155,6 +172,7 @@ function UserDashboard({ currentUser }) {
                   key={device.id} 
                   device={device} 
                   showAdminControls={false}
+                  onShowConsumption={handleOpenEnergyModal}
                 />
               ))
             ) : (
@@ -165,7 +183,10 @@ function UserDashboard({ currentUser }) {
 
         {chartData && (
           <div className="chart-container" style={{ width: '100%', height: 400, marginTop: '20px' }}>
-            <h4>Total Energy Consumption for {selectedDateDisplay}</h4>
+            <h4>
+              {targetDeviceId ? `Consumption for Device ID: ${targetDeviceId}` : 'Total Energy Consumption'} 
+              {' '}on {selectedDateDisplay}
+            </h4>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
@@ -178,10 +199,10 @@ function UserDashboard({ currentUser }) {
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" label={{ value: 'Hour (0-23)', position: 'insideBottomRight', offset: -5 }} />
-                <YAxis label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} />
+                <YAxis label={{ value: 'Energy (W)', angle: -90, position: 'insideLeft' }} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="totalConsumption" name="Total Consumption (kWh)" fill="#8884d8" />
+                <Bar dataKey="totalConsumption" name="Consumption (W)" fill={targetDeviceId ? "#82ca9d" : "#8884d8"} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -4,7 +4,8 @@ function DeviceCard({
   device, 
   showAdminControls = false, 
   onDelete, 
-  onUpdate 
+  onUpdate,
+  onShowConsumption
 }) {
 
   const handleDelete = () => {
@@ -43,6 +44,12 @@ function DeviceCard({
         <div className="device-controls">
           <button className="btn-update" onClick={handleUpdate}>Update</button>
           <button className="btn-delete" onClick={handleDelete}>Delete</button>
+        </div>
+      )}
+
+      {!showAdminControls && onShowConsumption && (
+        <div className="device-controls">
+           <button onClick={() => onShowConsumption(device.id)}>Show consumption</button>
         </div>
       )}
     </div>
