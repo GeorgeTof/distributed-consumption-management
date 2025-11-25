@@ -12,6 +12,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/users")
@@ -45,9 +47,14 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    /**
+     * @deprecated This endpoint bypasses the Auth Service and RabbitMQ sync.
+     * Please use POST /auth/register in the Auth Service instead.
+     */
+    @Deprecated
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> create(@Valid @RequestBody UserDTO userDTO) {
+    public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody UserDTO userDTO) {
 
         Long id = userService.insert(userDTO);
 
@@ -57,7 +64,13 @@ public class UserController {
                 .buildAndExpand(id)
                 .toUri();
 
-        return ResponseEntity.created(location).build();
+        // Return 201 Created with warning body
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", id);
+        response.put("status", "success");
+        response.put("warning", "DEPRECATED: This endpoint will be removed. Please use POST /auth/register via Auth Service for correct synchronization.");
+
+        return ResponseEntity.created(location).body(response);
     }
 
     @DeleteMapping("/{id}")
