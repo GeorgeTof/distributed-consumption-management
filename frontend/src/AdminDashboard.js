@@ -6,11 +6,9 @@ import {
   getAllUsers,
   deleteAuthUser,
   deleteDevicesByUsername,
-  deleteUser,
   createDevice,
   updateUserEmail,
-  createUserProfile,
-  signUpAuth
+  registerUser,
 } from './api';
 import DeviceCard from './components/DeviceCard';
 import UserCard from './components/UserCard';
@@ -115,16 +113,16 @@ function AdminDashboard({ currentUser }) {
     setLoading(true);
     setError(null);
     try {
-      console.log(`Step 1: Deleting from auth-service for ${user.username}`);
-      await deleteAuthUser(currentUser.token, user.username);
-      console.log(`Step 2: Deleting devices for ${user.username}`);
+      console.log(`Step 1: Deleting devices for ${user.username}`);
       await deleteDevicesByUsername(currentUser.token, user.username);
-      console.log(`Step 3: Deleting from user-service for ID ${user.id}`);
-      await deleteUser(currentUser.token, user.id);
+
+      console.log(`Step 2: Deleting user ${user.username} via Auth Service...`);
+      await deleteAuthUser(currentUser.token, user.username);
+      
       setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
       alert(`Successfully deleted user ${user.username}`);
     } catch (err) {
-      alert(`Error deleting user: ${err.message}. The data may be inconsistent.`);
+      alert(`Error deleting user: ${err.message}.`);
       setError(err.message);
     }
     setLoading(false);
@@ -165,22 +163,25 @@ function AdminDashboard({ currentUser }) {
     setLoading(true);
 
     try {
-      alert(`Step 1: Creating profile for ${profile.username}...`);
-      const profileResponse = await createUserProfile(currentUser.token, profile);
-      
-      if (profileResponse.status !== 201) {
-          throw new Error("User profile creation failed with an unexpected status.");
-      }
-      
-      alert(`Step 2: Creating credentials for ${auth.username}...`);
-      await signUpAuth(currentUser.token, auth.username, auth.password, auth.role);
+      const registerRequest = {
+        username: auth.username,
+        password: auth.password,
+        email: profile.email,
+        age: profile.age,
+        town: profile.town,
+        role: auth.role
+      };
 
-      alert(`Successfully created user ${profile.username} with role ${profile.role}.`);
+      console.log("Sending registration request:", registerRequest);
+
+      await registerUser(currentUser.token, registerRequest);
+
+      alert(`Successfully registered user ${profile.username}.`);
       handleCloseNewUserModal();
       handleLoadUsers();
       
     } catch (err) {
-      alert(`Failed to create user: ${err.message}. Data may be inconsistent.`);
+      alert(`Failed to create user: ${err.message}.`);
     } finally {
       setLoading(false);
     }

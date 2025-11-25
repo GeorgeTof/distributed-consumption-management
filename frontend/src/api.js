@@ -80,18 +80,6 @@ export async function getAllUsers(token) {
   return authFetch('/users/all', token);
 }
 
-export async function deleteUser(token, userId) {
-  return authFetch(`/users/${userId}`, token, {
-    method: 'DELETE',
-  });
-}
-
-export async function deleteAuthUser(token, username) {
-  return authFetch(`/auth/user/${username}`, token, {
-    method: 'DELETE',
-  });
-}
-
 export async function deleteDevicesByUsername(token, username) {
   return authFetch(`/devices/by-user/${username}`, token, {
     method: 'DELETE',
@@ -114,6 +102,36 @@ export async function updateUserEmail(token, userId, newEmail) {
   });
 }
 
+export async function getDeviceHistory(token, deviceId, year, month, day) {
+  const url = `/monitor/history?deviceId=${deviceId}&year=${year}&month=${month}&day=${day}`;
+  
+  return authFetch(url, token, {
+    method: 'GET',
+  });
+}
+
+export async function registerUser(token, userData) {
+  return authFetch('/auth/register', token, {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+}
+
+export async function deleteAuthUser(token, username) {
+  return authFetch(`/auth/user/${username}`, token, {
+    method: 'DELETE',
+  });
+}
+
+
+// --- LEGACY / DEPRECATED FUNCTIONS ---
+// Kept just in case of fallback
+export async function deleteUser(token, userId) {
+  return authFetch(`/users/${userId}`, token, {
+    method: 'DELETE',
+  });
+}
+
 export async function createUserProfile(token, userProfileData) {
   const result = await authFetch('/users', token, {
     method: 'POST',
@@ -121,14 +139,8 @@ export async function createUserProfile(token, userProfileData) {
   });
   
   if (result.status === 201 && result.response) {
-    const locationHeader = result.response.headers.get('Location');
-    if (locationHeader) {
-      const idMatch = locationHeader.match(/\/(\d+)$/); 
-      if (idMatch && idMatch[1]) {
-        return { data: { id: parseInt(idMatch[1]) }, status: 201 };
-      }
-    }
-    throw new Error("User profile created successfully, but ID retrieval failed. Cannot proceed to Auth service.");
+    // Return a dummy ID since it is not needed
+    return { data: { id: 0 }, status: 201 };
   }
 
   return result;
@@ -159,13 +171,4 @@ export async function signUpAuth(token, username, password, role) {
   } catch (e) {
     throw new Error('Authentication signup failed');
   }
-}
-
-export async function getDeviceHistory(token, deviceId, year, month, day) {
-  // Matches the @RequestParam in Spring Boot
-  const url = `/monitor/history?deviceId=${deviceId}&year=${year}&month=${month}&day=${day}`;
-  
-  return authFetch(url, token, {
-    method: 'GET',
-  });
 }
