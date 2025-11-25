@@ -5,7 +5,6 @@ import {
   updateDeviceConsumption,
   getAllUsers,
   deleteAuthUser,
-  deleteDevicesByUsername,
   createDevice,
   updateUserEmail,
   registerUser,
@@ -113,10 +112,7 @@ function AdminDashboard({ currentUser }) {
     setLoading(true);
     setError(null);
     try {
-      console.log(`Step 1: Deleting devices for ${user.username}`);
-      await deleteDevicesByUsername(currentUser.token, user.username);
-
-      console.log(`Step 2: Deleting user ${user.username} via Auth Service...`);
+      console.log(`Deleting user ${user.username} only via Auth Service...`);
       await deleteAuthUser(currentUser.token, user.username);
       
       setUsers((prevUsers) => prevUsers.filter((u) => u.id !== user.id));
