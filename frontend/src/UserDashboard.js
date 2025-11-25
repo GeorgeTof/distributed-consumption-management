@@ -1,21 +1,35 @@
 import React, { useState } from 'react'; 
-import { getMyProfile, getOwnDevices } from './api'; 
+import { getMyProfile, getOwnDevices, getDeviceHistory } from './api'; 
 import UserProfile from './components/UserProfile'; 
 import DeviceCard from './components/DeviceCard'; 
-import EnergyConsumptionModal from './components/EnergyConsumptionModal'; 
+import EnergyConsumptionModal from './components/EnergyConsumptionModal';
+// Recharts components
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 
 function UserDashboard({ currentUser }) {
   const [profile, setProfile] = useState(null);
   const [devices, setDevices] = useState(null);
+  const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const [isEnergyModalOpen, setIsEnergyModalOpen] = useState(false);
+  const [selectedDateDisplay, setSelectedDateDisplay] = useState('');
 
   const handleLoadProfile = async () => {
     setLoading(true);
     setError(null);
-    setDevices(null); 
+    setDevices(null);
+    setChartData(null);
     try {
       const response = await getMyProfile(currentUser.token);
       setProfile(response.data); 
@@ -30,6 +44,7 @@ function UserDashboard({ currentUser }) {
     setLoading(true);
     setError(null);
     setProfile(null); 
+    setChartData(null);
     try {
       const response = await getOwnDevices(currentUser.token);
       setDevices(response.data); 
@@ -48,14 +63,65 @@ function UserDashboard({ currentUser }) {
     setIsEnergyModalOpen(false);
   };
 
-  const handleEnergyDateSubmit = (date) => {
-    alert(`Date selected successfully: ${date}`);
+  const handleEnergyDateSubmit = async (dateStr) => {
+    // input type="date" as "YYYY-MM-DD"
     setIsEnergyModalOpen(false);
     
-    // TODO add the logic here to:
-    // 1. Fetch devices (if not loaded)
-    // 2. Fetch history for each device
-    // 3. Aggregate and display chart
+    const [yearStr, monthStr, dayStr] = dateStr.split('-');
+    const displayDate = `${dayStr}/${monthStr}/${yearStr}`;
+    setSelectedDateDisplay(displayDate);
+
+    setLoading(true);
+    setProfile(null); 
+    setDevices(null);
+    setChartData(null);
+
+    try {
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const day = parseInt(dayStr, 10);
+
+      const devicesResponse = await getOwnDevices(currentUser.token);
+      const myDevices = devicesResponse.data;
+
+      if (!myDevices || myDevices.length === 0) {
+        alert("You have no devices to monitor.");
+        setLoading(false);
+        return;
+      }
+
+      const historyPromises = myDevices.map(device => 
+        getDeviceHistory(currentUser.token, device.id, year, month, day)
+          .then(res => res.data)
+          .catch(err => {
+             console.error(`Failed to fetch history for device ${device.id}`, err);
+             return []; // Return empty array on error so Promise.all doesn't fail
+          })
+      );
+
+      const allHistories = await Promise.all(historyPromises);
+
+      const hourlyTotals = Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        totalConsumption: 0
+      }));
+
+      allHistories.forEach(deviceHistory => {
+        deviceHistory.forEach(record => {
+          if (record.hour >= 0 && record.hour < 24) {
+            hourlyTotals[record.hour].totalConsumption += record.measurement;
+          }
+        });
+      });
+
+      setChartData(hourlyTotals);
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load energy data: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -94,6 +160,30 @@ function UserDashboard({ currentUser }) {
             ) : (
               <p>You have no devices assigned.</p>
             )}
+          </div>
+        )}
+
+        {chartData && (
+          <div className="chart-container" style={{ width: '100%', height: 400, marginTop: '20px' }}>
+            <h4>Total Energy Consumption for {selectedDateDisplay}</h4>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" label={{ value: 'Hour (0-23)', position: 'insideBottomRight', offset: -5 }} />
+                <YAxis label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="totalConsumption" name="Total Consumption (kWh)" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
       </div>

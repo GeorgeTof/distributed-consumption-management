@@ -19,7 +19,7 @@ function EnergyConsumptionModal({ show, onClose, onSubmit }) {
     }
 
     onSubmit(selectedDate);
-    // Reset date after submit if desired, or keep it.
+    // Reset date after submit if needed or keep it
     setSelectedDate('');
   };
 
@@ -35,7 +35,6 @@ function EnergyConsumptionModal({ show, onClose, onSubmit }) {
               id="energy-date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              // Optional: restrict to not selecting future dates
               max={new Date().toISOString().split('T')[0]} 
             />
           </div>

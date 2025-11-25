@@ -160,3 +160,12 @@ export async function signUpAuth(token, username, password, role) {
     throw new Error('Authentication signup failed');
   }
 }
+
+export async function getDeviceHistory(token, deviceId, year, month, day) {
+  // Matches the @RequestParam in Spring Boot
+  const url = `/monitor/history?deviceId=${deviceId}&year=${year}&month=${month}&day=${day}`;
+  
+  return authFetch(url, token, {
+    method: 'GET',
+  });
+}
