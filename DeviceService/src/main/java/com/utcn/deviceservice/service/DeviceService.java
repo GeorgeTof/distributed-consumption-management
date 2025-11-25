@@ -8,6 +8,7 @@ import com.utcn.deviceservice.handlers.exceptions.model.BadRequestException;
 import com.utcn.deviceservice.handlers.exceptions.model.ResourceNotFoundException;
 import com.utcn.deviceservice.model.Device;
 import com.utcn.deviceservice.repo.DeviceRepository;
+import com.utcn.deviceservice.repo.ValidUserRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,15 +27,20 @@ public class DeviceService {
     private final DeviceRepository deviceRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
+    private final ValidUserRepository validUserRepository;
 
-    public DeviceService(DeviceRepository deviceRepository, RabbitTemplate rabbitTemplate, ObjectMapper objectMapper) {
+    public DeviceService(DeviceRepository deviceRepository,
+                         RabbitTemplate rabbitTemplate,
+                         ObjectMapper objectMapper,
+                         ValidUserRepository validUserRepository) {
         this.deviceRepository = deviceRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
+        this.validUserRepository = validUserRepository;
     }
+
     public List<DeviceDTO> findDevices() {
         List<Device> deviceList = deviceRepository.findAll();
-
         return deviceList.stream()
                 .map(DeviceBuilder::toDTO)
                 .collect(Collectors.toList());
@@ -54,6 +60,10 @@ public class DeviceService {
     public Long insert(DeviceDTO deviceDTO) {
         validateDeviceForCreation(deviceDTO);
 
+        if (!validUserRepository.existsById(deviceDTO.ownerUsername())) {
+            throw new ResourceNotFoundException("Cannot assign device to unknown user: " + deviceDTO.ownerUsername());
+        }
+
         Device device = DeviceBuilder.toEntity(deviceDTO);
         device.setPowerConsumed(0.0);
 
@@ -62,9 +72,9 @@ public class DeviceService {
 
         try {
             Map<String, Object> eventMessage = new HashMap<>();
-            eventMessage.put("eventType", "DEVICE_CREATED"); // TODO check if type is really needed
+            eventMessage.put("eventType", "DEVICE_CREATED");
             eventMessage.put("deviceId", device.getId());
-//            eventMessage.put("userUsername", device.getOwnerUsername()); // may want to enforce security
+            eventMessage.put("userId", device.getOwnerUsername());  // useful for eventual further extensions
 
             String jsonPayload = objectMapper.writeValueAsString(eventMessage);
 
@@ -80,7 +90,6 @@ public class DeviceService {
 
     public List<DeviceDTO> findDeviceByUsername(String username) {
         List<Device> deviceList = deviceRepository.findByOwnerUsername(username);
-
         return deviceList.stream()
                 .map(DeviceBuilder::toDTO)
                 .collect(Collectors.toList());
@@ -90,13 +99,10 @@ public class DeviceService {
         if (powerConsumed == null || powerConsumed < 0.0) {
             throw new BadRequestException("Power consumption cannot be null or negative.");
         }
-
         Device device = deviceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Device with id: " + id));
-
         device.setPowerConsumed(powerConsumed);
         Device updatedDevice = deviceRepository.save(device);
-
         return DeviceBuilder.toDTO(updatedDevice);
     }
 
@@ -105,7 +111,6 @@ public class DeviceService {
             LOGGER.error("Device with id {} was not found in db", id);
             throw new ResourceNotFoundException("Device with id: " + id);
         }
-
         deviceRepository.deleteById(id);
         LOGGER.debug("Device with id {} was deleted from db", id);
 
@@ -121,12 +126,10 @@ public class DeviceService {
         }
     }
 
-//    @Transactional
     public void deleteDevicesByUsername(String username) {
         if (username == null || username.isBlank()) {
             throw new BadRequestException("Username must not be empty.");
         }
-
         deviceRepository.deleteByOwnerUsername(username);
         LOGGER.debug("All devices for user {} were deleted from db", username);
     }
