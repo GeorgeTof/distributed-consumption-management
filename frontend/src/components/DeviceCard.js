@@ -37,7 +37,6 @@ function DeviceCard({
         <li><strong>Brand:</strong> {device.brand}</li>
         <li><strong>Owner:</strong> {device.ownerUsername}</li>
         <li><strong>Max Consumption:</strong> {device.maximumConsumption} W</li>
-        <li><strong>Power Consumed:</strong> {device.powerConsumed} W</li>
       </ul>
       
       {showAdminControls && (
