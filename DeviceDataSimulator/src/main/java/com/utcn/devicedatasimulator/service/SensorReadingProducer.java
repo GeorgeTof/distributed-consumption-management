@@ -22,18 +22,20 @@ public class SensorReadingProducer {
     7 - Iphone      - 34
      */
 
-    private final List<String> deviceIds = Arrays.asList(   // TODO update to real devices
+    private final List<String> deviceIds = Arrays.asList(
             "1111",
             "3",
             "6",
-            "7"
+            "7",
+            "10"
     );
 
     private final List<Integer> maxConsumptions = Arrays.asList(
             60,
             5,
             70,
-            34
+            34,
+            44
     );
 
     private final List<Integer> heavyHours = Arrays.asList(
