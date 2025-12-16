@@ -1,0 +1,83 @@
+/* Reuse basic layout from chat-window, but specific internal styles */
+.community-chat-window {
+  position: fixed;
+  bottom: 20px;
+  /* Position it to the left of the Support Chat so they can be open together */
+  right: 360px; 
+  width: 350px;
+  height: 450px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  border: 1px solid #ddd;
+  font-family: Arial, sans-serif;
+}
+
+.community-header {
+  background-color: #28a745; /* Green for Community */
+  color: white;
+  padding: 10px 15px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+/* Sender Name Label */
+.sender-name {
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+  color: #555;
+  font-weight: bold;
+}
+
+/* Message Styles */
+.message-bubble {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  position: relative;
+}
+
+/* Standard User Style */
+.message-row.user .message-bubble {
+  background-color: #e9ecef;
+  color: #333;
+  border-bottom-left-radius: 2px;
+}
+
+/* ADMIN Style - distinct red/danger theme */
+.message-row.admin .message-bubble {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-bottom-left-radius: 2px;
+}
+
+/* My own messages */
+.message-row.own {
+  align-self: flex-end;
+}
+.message-row.own .message-bubble {
+  background-color: #28a745;
+  color: white;
+  border-bottom-right-radius: 2px;
+}
+
+/* Container for rows */
+.message-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  margin-bottom: 8px;
+}
+
+.message-row.other {
+  align-self: flex-start;
+}

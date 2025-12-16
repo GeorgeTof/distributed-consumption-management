@@ -51,6 +51,7 @@ function SupportChat({ currentUser, onClose }) {
       const payload = {
         sender: currentUser.user,
         content: inputText,
+        role: currentUser.roles.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER',
         timestamp: new Date().toISOString()
       };
       

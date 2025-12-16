@@ -4,6 +4,7 @@ import UserProfile from './components/UserProfile';
 import DeviceCard from './components/DeviceCard'; 
 import EnergyConsumptionModal from './components/EnergyConsumptionModal';
 import SupportChat from './components/SupportChat';
+import CommunityChat from './components/CommunityChat';
 // Recharts components
 import { 
   BarChart, 
@@ -29,6 +30,8 @@ function UserDashboard({ currentUser }) {
   const [targetDeviceId, setTargetDeviceId] = useState(null);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const [isCommunityChatOpen, setIsCommunityChatOpen] = useState(false);
 
   const handleLoadProfile = async () => {
     setLoading(true);
@@ -151,16 +154,19 @@ function UserDashboard({ currentUser }) {
 
       <div className="dashboard-buttons">
         <button onClick={handleLoadProfile} disabled={loading}>
-          Load My Profile
+          My Profile
         </button>
         <button onClick={handleLoadDevices} disabled={loading}>
-          Load My Devices
+          My Devices
         </button>
         <button onClick={() => handleOpenEnergyModal(null)} disabled={loading} style={{ marginLeft: '10px' }}>
-          Show My Energy Consumption
+          My Energy Consumption
         </button>
         <button onClick={() => setIsChatOpen(true)} style={{ marginLeft: '10px', backgroundColor: '#6f42c1' }}>
           Customer Support
+        </button>
+        <button onClick={() => setIsCommunityChatOpen(true)} style={{ marginLeft: '10px', backgroundColor: '#28a745' }}>
+          Community Chat
         </button>
       </div>
 
@@ -227,6 +233,12 @@ function UserDashboard({ currentUser }) {
           onClose={() => setIsChatOpen(false)} 
         />
       )}
+      {isCommunityChatOpen && (
+          <CommunityChat 
+            currentUser={currentUser} 
+            onClose={() => setIsCommunityChatOpen(false)} 
+          />
+        )}
     </div>
   );
 }

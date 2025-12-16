@@ -55,7 +55,7 @@ public class SupportChatController {
             responseText = "Our application is free to use, but donations are appreciated!";
         }
 
-        ChatMessage response = new ChatMessage("Support Bot", responseText);
+        ChatMessage response = new ChatMessage("Support Bot", responseText, "SUPPORT");
         response.setTimestamp(String.valueOf(System.currentTimeMillis()));
 
         String destination = "/topic/support/" + message.getSender();
