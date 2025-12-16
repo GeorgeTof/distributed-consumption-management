@@ -63,8 +63,16 @@ public class SensorReadingProducer {
             String deviceId = deviceIds.get(deviceIndex);
             double maxCons = maxConsumptions.get(deviceIndex);
 
-            double scaleFactorByHour = heavyHours.contains(currentSimulatedTime.getHour()) ? 1.0 : 0.7;
-            double measurement = random.nextDouble() * maxCons * scaleFactorByHour;
+            double measurement;
+
+            if (random.nextInt(10) == 1) {
+                measurement = maxCons * 4.0;
+                System.out.println(">>> SIMULATING SPIKE for " + deviceId + ": " + measurement);
+            } else {
+                double scaleFactorByHour = heavyHours.contains(currentSimulatedTime.getHour()) ? 1.0 : 0.7;
+                measurement = random.nextDouble() * maxCons * scaleFactorByHour;
+            }
+
             measurement = Math.round(measurement * 10000.0) / 10000.0;
 
             Map<String, Object> data = new HashMap<>();

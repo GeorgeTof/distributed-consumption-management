@@ -27,6 +27,8 @@ public class RabbitConfig {
     @Value("${internal.queue.name}")
     private String internalQueueName;
 
+    public static final String OVERCONSUMPTION_QUEUE = "overconsumption.queue";
+
     // ========================================================================
     // BROKER 1: SENSOR DATA
     // ========================================================================
@@ -73,7 +75,7 @@ public class RabbitConfig {
     }
 
     // ========================================================================
-    // BROKER 2: INTERNAL EVENTS (Topic Exchange)
+    // BROKER 2: INTERNAL EVENTS (Topic Exchange + Overconsumption Queue)
     // ========================================================================
     @Bean(name = "internalConnectionFactory")
     public ConnectionFactory internalConnectionFactory(
@@ -118,11 +120,18 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue overconsumptionQueue(@Qualifier("internalAdmin") RabbitAdmin internalAdmin) {
+        Queue queue = new Queue(OVERCONSUMPTION_QUEUE, true);
+        queue.setAdminsThatShouldDeclare(internalAdmin);
+        return queue;
+    }
+
+    @Bean
     public Binding binding(@Qualifier("internalAdmin") RabbitAdmin internalAdmin) {
         Binding binding = BindingBuilder
                 .bind(monitorEventsQueue())
                 .to(internalExchange())
-                .with("device.#"); // Listen to all device related events
+                .with("device.#");
 
         binding.setAdminsThatShouldDeclare(internalAdmin);
         internalExchange().setAdminsThatShouldDeclare(internalAdmin);
