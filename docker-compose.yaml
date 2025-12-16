@@ -172,6 +172,22 @@ services:
     networks:
       demo_net:
 
+  websocket-service:
+    build:
+      context: ./WebsocketService
+      dockerfile: ./Dockerfile
+    container_name: websocket-service
+    restart: always
+    environment:
+      - PORT=8080
+      - RABBIT_INTERNAL_HOST=rabbitmq-internal
+      - RABBIT_INTERNAL_PORT=5672
+      - APP_QUEUE_NAME=overconsumption.queue
+    depends_on:
+      - rabbitmq-internal
+    networks:
+      demo_net:
+
   frontend:
     build:
       context: ./frontend  
