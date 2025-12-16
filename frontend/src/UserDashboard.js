@@ -3,6 +3,7 @@ import { getMyProfile, getOwnDevices, getDeviceHistory } from './api';
 import UserProfile from './components/UserProfile'; 
 import DeviceCard from './components/DeviceCard'; 
 import EnergyConsumptionModal from './components/EnergyConsumptionModal';
+import SupportChat from './components/SupportChat';
 // Recharts components
 import { 
   BarChart, 
@@ -26,6 +27,8 @@ function UserDashboard({ currentUser }) {
   const [selectedDateDisplay, setSelectedDateDisplay] = useState('');
 
   const [targetDeviceId, setTargetDeviceId] = useState(null);
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleLoadProfile = async () => {
     setLoading(true);
@@ -156,6 +159,9 @@ function UserDashboard({ currentUser }) {
         <button onClick={() => handleOpenEnergyModal(null)} disabled={loading} style={{ marginLeft: '10px' }}>
           Show My Energy Consumption
         </button>
+        <button onClick={() => setIsChatOpen(true)} style={{ marginLeft: '10px', backgroundColor: '#6f42c1' }}>
+          Customer Support
+        </button>
       </div>
 
       {loading && <p>Loading...</p>}
@@ -214,6 +220,13 @@ function UserDashboard({ currentUser }) {
         onClose={handleCloseEnergyModal} 
         onSubmit={handleEnergyDateSubmit} 
       />
+
+      {isChatOpen && (
+        <SupportChat 
+          currentUser={currentUser} 
+          onClose={() => setIsChatOpen(false)} 
+        />
+      )}
     </div>
   );
 }
