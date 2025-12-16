@@ -1,6 +1,7 @@
 package com.utcn.monitorservice.controller;
 
 import com.utcn.monitorservice.dto.SensorRecordDTO;
+import com.utcn.monitorservice.dto.ValidDeviceDTO;
 import com.utcn.monitorservice.model.SensorRecord;
 import com.utcn.monitorservice.model.ValidDevice;
 import com.utcn.monitorservice.repo.SensorRecordRepository;
@@ -58,6 +59,17 @@ public class MonitorController {
     public List<Long> getAllValidDeviceIds() {
         return validDeviceRepository.findAll().stream()
                 .map(ValidDevice::getDeviceId)
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/valid-devices-full")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ValidDeviceDTO> getAllValidDevicesFull() {
+        return validDeviceRepository.findAll().stream()
+                .map(device -> new ValidDeviceDTO(
+                        device.getDeviceId(),
+                        device.getMaxConsumption(),
+                        device.getOwnerUsername()))
                 .collect(Collectors.toList());
     }
 

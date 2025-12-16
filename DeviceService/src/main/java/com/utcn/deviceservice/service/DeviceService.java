@@ -74,7 +74,8 @@ public class DeviceService {
             Map<String, Object> eventMessage = new HashMap<>();
             eventMessage.put("eventType", "DEVICE_CREATED");
             eventMessage.put("deviceId", device.getId());
-            eventMessage.put("userId", device.getOwnerUsername());  // useful for eventual further extensions
+            eventMessage.put("userId", device.getOwnerUsername());
+            eventMessage.put("maxConsumption", device.getMaximumConsumption());
 
             String jsonPayload = objectMapper.writeValueAsString(eventMessage);
 

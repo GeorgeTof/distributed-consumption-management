@@ -35,18 +35,20 @@ public class DeviceEventConsumer {
             Long deviceId = Long.parseLong(deviceIdObj.toString());
 
             if ("DEVICE_CREATED".equals(eventType)) {
-                ValidDevice validDevice = new ValidDevice(deviceId);
+                Object maxConsObj = message.get("maxConsumption");
+                Double maxConsumption = (maxConsObj != null) ? Double.parseDouble(maxConsObj.toString()) : 0.0;
+                String ownerUsername = (String) message.get("userId");
+
+                ValidDevice validDevice = new ValidDevice(deviceId, maxConsumption, ownerUsername);
+
                 validDeviceRepository.save(validDevice);
-                System.out.println(">>> Synced: Added Device ID " + deviceId);
+                System.out.println(">>> Synced: Added Device ID " + deviceId + " [User: " + ownerUsername + ", Max: " + maxConsumption + "]");
 
             } else if ("DEVICE_DELETED".equals(eventType)) {
                 if (validDeviceRepository.existsById(deviceId)) {
                     validDeviceRepository.deleteById(deviceId);
                     System.out.println(">>> Synced: Removed Device ID " + deviceId);
                     sensorRecordRepository.deleteByDeviceId(deviceId);
-                    System.out.println(">>> Synced: Deleted all sensor measurements for Device ID " + deviceId);
-                } else {
-                    System.out.println(">>> Synced: Ignored Delete for unknown Device ID " + deviceId);
                 }
             }
 
