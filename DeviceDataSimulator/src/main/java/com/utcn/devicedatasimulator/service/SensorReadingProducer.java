@@ -65,7 +65,7 @@ public class SensorReadingProducer {
 
             double measurement;
 
-            if (random.nextInt(10) == 1) {
+            if (random.nextInt(6) == 1) {
                 measurement = maxCons * 4.0;
                 System.out.println(">>> SIMULATING SPIKE for " + deviceId + ": " + measurement);
             } else {

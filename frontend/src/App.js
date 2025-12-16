@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import './App.css';
 import { login } from './api';
-// Import our new dashboard components
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
+
+import { Client } from '@stomp/stompjs'; 
+import SockJS from 'sockjs-client';
 
 const USER_DATA_KEY = 'my-app-user-data';
 
@@ -24,6 +26,52 @@ function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+      if (!currentUser) return;
+
+      console.log('[DEBUG] Starting WebSocket connection for:', currentUser.user);
+
+      const client = new Client({
+        webSocketFactory: () => new SockJS('http://localhost:8082/ws'),
+
+        onConnect: () => {
+        console.log('Connected to WebSocket');
+        
+        client.subscribe(`/topic/client/${currentUser.user}`, (message) => {
+          try {
+            const data = JSON.parse(message.body);
+            
+            const alertText = 
+              `⚠️ ENERGY CONSUMPTION OVER LIMIT ALERT ⚠️\n\n` +
+              `Device ID: ${data.device_id || 'Unknown'}\n` +
+              `Measurement: ${data.measurement_value ?? 'N/A'} W\n` + 
+              `Max consumption: ${data.max_consumption ?? 'N/A'} W\n` + 
+              `Time: ${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'Just now'}\n\n` +
+              `Please contact an administrator!`;
+
+            alert(alertText);
+
+          } catch (e) {
+            alert(`Energy Alert:\n\n${message.body}`);
+          }
+        });
+      },
+        onDisconnect: () => {
+          console.log('Disconnected');
+        },
+        debug: (str) => {
+          console.log(str);
+        },
+        reconnectDelay: 5000,
+      });
+
+      client.activate();
+
+      return () => {
+        client.deactivate();
+      };
+  }, [currentUser]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

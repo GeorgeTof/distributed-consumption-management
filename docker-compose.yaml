@@ -178,6 +178,8 @@ services:
       dockerfile: ./Dockerfile
     container_name: websocket-service
     restart: always
+    ports:
+      - "8082:8080"
     environment:
       - PORT=8080
       - RABBIT_INTERNAL_HOST=rabbitmq-internal
