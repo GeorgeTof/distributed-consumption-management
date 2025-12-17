@@ -1,6 +1,9 @@
 package com.utcn.websocketservice.controller;
 
 import com.utcn.websocketservice.dto.ChatMessage;
+import com.google.genai.Client;
+import com.google.genai.types.GenerateContentResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -11,6 +14,12 @@ public class SupportChatController {
 
     private final SimpMessagingTemplate template;
 
+    private static final String SYSTEM_CONTEXT =
+            "You are a helpful support assistant for a Distributed Energy Management System. " +
+            "Keep your answers short (max 2 sentences), friendly, and helpful. " +
+            "If the user asks something irrelevant to energy, device management, or the app, politely refuse. " +
+            "Context: ";
+
     public SupportChatController(SimpMessagingTemplate template) {
         this.template = template;
     }
@@ -19,9 +28,8 @@ public class SupportChatController {
     public void handleSupportMessage(@Payload ChatMessage message) {
         System.out.println("Received support message from: " + message.getSender());
 
-        String responseText = "I did not understand that.";
-
         String content = message.getContent().toLowerCase();
+        String responseText;
 
         if (content.contains("total") && content.contains("consumption")) {
             responseText = "To view your consumption, navigate to the Dashboard and click 'Show My Energy Consumption'.";
@@ -54,11 +62,34 @@ public class SupportChatController {
         else if (content.contains("pay") || content.contains("payment") || content.contains("subscription")) {
             responseText = "Our application is free to use, but donations are appreciated!";
         }
+        else {
+            responseText = callGeminiSdk(message.getContent());
+        }
 
+        // --- SEND RESPONSE ---
         ChatMessage response = new ChatMessage("Support Bot", responseText, "SUPPORT");
         response.setTimestamp(String.valueOf(System.currentTimeMillis()));
 
         String destination = "/topic/support/" + message.getSender();
         this.template.convertAndSend(destination, response);
+    }
+
+    private String callGeminiSdk(String userQuestion) {
+        try {
+            Client client = new Client();
+
+            GenerateContentResponse response =
+                    client.models.generateContent(
+                            "gemini-2.5-flash",
+                            SYSTEM_CONTEXT + userQuestion,
+                            null);
+
+            return response.text();
+
+        } catch (Exception e) {
+            System.err.println("Gemini SDK Error: " + e.getMessage());
+            e.printStackTrace();
+            return "I am having trouble connecting to the AI brain right now. Please try again later.";
+        }
     }
 }
