@@ -1,8 +1,6 @@
-/* Reuse basic layout from chat-window, but specific internal styles */
 .community-chat-window {
   position: fixed;
   bottom: 20px;
-  /* Position it to the left of the Support Chat so they can be open together */
   right: 360px; 
   width: 350px;
   height: 450px;
@@ -17,7 +15,7 @@
 }
 
 .community-header {
-  background-color: #28a745; /* Green for Community */
+  background-color: #28a745;
   color: white;
   padding: 10px 15px;
   border-top-left-radius: 8px;
@@ -28,7 +26,6 @@
   font-weight: bold;
 }
 
-/* Sender Name Label */
 .sender-name {
   font-size: 0.75rem;
   margin-bottom: 2px;
@@ -36,7 +33,6 @@
   font-weight: bold;
 }
 
-/* Message Styles */
 .message-bubble {
   padding: 8px 12px;
   border-radius: 12px;
@@ -45,14 +41,12 @@
   position: relative;
 }
 
-/* Standard User Style */
 .message-row.user .message-bubble {
   background-color: #e9ecef;
   color: #333;
   border-bottom-left-radius: 2px;
 }
 
-/* ADMIN Style - distinct red/danger theme */
 .message-row.admin .message-bubble {
   background-color: #f8d7da;
   color: #721c24;
@@ -60,7 +54,6 @@
   border-bottom-left-radius: 2px;
 }
 
-/* My own messages */
 .message-row.own {
   align-self: flex-end;
 }
@@ -70,7 +63,6 @@
   border-bottom-right-radius: 2px;
 }
 
-/* Container for rows */
 .message-row {
   display: flex;
   flex-direction: column;

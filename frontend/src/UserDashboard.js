@@ -227,18 +227,19 @@ function UserDashboard({ currentUser }) {
         onSubmit={handleEnergyDateSubmit} 
       />
 
-      {isChatOpen && (
-        <SupportChat 
-          currentUser={currentUser} 
-          onClose={() => setIsChatOpen(false)} 
-        />
-      )}
       {isCommunityChatOpen && (
           <CommunityChat 
             currentUser={currentUser} 
             onClose={() => setIsCommunityChatOpen(false)} 
           />
         )}
+      
+      {isChatOpen && (
+        <SupportChat 
+          currentUser={currentUser} 
+          onClose={() => setIsChatOpen(false)} 
+        />
+      )}
     </div>
   );
 }
