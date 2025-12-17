@@ -163,12 +163,27 @@ services:
       - RABBIT_INTERNAL_HOST=rabbitmq-internal
       - RABBIT_INTERNAL_PORT=5672
       - PORT=8080
-    # ports:
-    #   - "8083:8080" 
+      - INSTANCE_INDEX=0 
     depends_on:
       - monitor-db
       - rabbitmq
       - rabbitmq-internal
+      - load-balancer
+    networks:
+      demo_net:
+
+  load-balancer:
+    build:
+      context: ./LoadBalancer
+      dockerfile: ./Dockerfile
+    container_name: load-balancer
+    restart: always
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - MONITOR_INSTANCES_COUNT=1
+    depends_on:
+      - rabbitmq
     networks:
       demo_net:
 

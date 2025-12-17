@@ -9,6 +9,7 @@ import com.utcn.monitorservice.repo.ValidDeviceRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class SensorConsumer {
+
+    @Value("${INSTANCE_INDEX:0}")
+    private String instanceIndex;
 
     private final SensorRecordRepository repository;
     private final ValidDeviceRepository validDeviceRepository;
@@ -49,6 +53,7 @@ public class SensorConsumer {
             ValidDevice device = validDeviceRepository.findById(deviceId).orElse(null);
 
             if (device == null) {
+                System.out.print("#" + instanceIndex + " ");
                 System.out.println("Received data for unknown Device ID: " + deviceId + ". Discarding.");
                 return;
             }
@@ -78,6 +83,7 @@ public class SensorConsumer {
             synchronized (buffer) {
                 buffer.add(measurement);
 
+                System.out.print("#" + instanceIndex + " ");
                 System.out.println("Buffer for Device " + deviceId + ": " + buffer.size() + "/6");
 
                 if (buffer.size() >= 6) {
