@@ -172,6 +172,58 @@ services:
     networks:
       demo_net:
 
+  monitor-service-2:
+    build:
+      context: ./MonitorService
+      dockerfile: ./Dockerfile
+    container_name: monitor-service-2
+    restart: always
+    environment:
+      - DB_IP=monitor-db
+      - DB_PORT=5432
+      - DB_DBNAME=monitor-db
+      - DB_USER=postgres
+      - DB_PASSWORD=root
+      - RABBIT_SENSOR_HOST=rabbitmq
+      - RABBIT_SENSOR_PORT=5672
+      - RABBIT_INTERNAL_HOST=rabbitmq-internal
+      - RABBIT_INTERNAL_PORT=5672
+      - PORT=8080
+      - INSTANCE_INDEX=1
+    depends_on:
+      - monitor-db
+      - rabbitmq
+      - rabbitmq-internal
+      - load-balancer
+    networks:
+      demo_net:
+
+  monitor-service-3:
+    build:
+      context: ./MonitorService
+      dockerfile: ./Dockerfile
+    container_name: monitor-service-3
+    restart: always
+    environment:
+      - DB_IP=monitor-db
+      - DB_PORT=5432
+      - DB_DBNAME=monitor-db
+      - DB_USER=postgres
+      - DB_PASSWORD=root
+      - RABBIT_SENSOR_HOST=rabbitmq
+      - RABBIT_SENSOR_PORT=5672
+      - RABBIT_INTERNAL_HOST=rabbitmq-internal
+      - RABBIT_INTERNAL_PORT=5672
+      - PORT=8080
+      - INSTANCE_INDEX=2
+    depends_on:
+      - monitor-db
+      - rabbitmq
+      - rabbitmq-internal
+      - load-balancer
+    networks:
+      demo_net:
+
   load-balancer:
     build:
       context: ./LoadBalancer
@@ -181,7 +233,7 @@ services:
     environment:
       - RABBIT_HOST=rabbitmq
       - RABBIT_PORT=5672
-      - MONITOR_INSTANCES_COUNT=1
+      - MONITOR_INSTANCES_COUNT=3
     depends_on:
       - rabbitmq
     networks:

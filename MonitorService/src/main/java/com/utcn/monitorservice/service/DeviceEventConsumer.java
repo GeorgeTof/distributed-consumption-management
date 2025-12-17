@@ -7,10 +7,12 @@ import com.utcn.monitorservice.repo.ValidDeviceRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 
 import java.util.Map;
 
 @Service
+@ConditionalOnExpression("'${INSTANCE_INDEX:0}' == '0'")
 public class DeviceEventConsumer {
 
     private final ValidDeviceRepository validDeviceRepository;

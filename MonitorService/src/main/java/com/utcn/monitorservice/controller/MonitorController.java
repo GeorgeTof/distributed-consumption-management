@@ -8,12 +8,14 @@ import com.utcn.monitorservice.repo.SensorRecordRepository;
 import com.utcn.monitorservice.repo.ValidDeviceRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/monitor")
+@ConditionalOnExpression("'${INSTANCE_INDEX:0}' == '0'")
 public class MonitorController {
 
     private final SensorRecordRepository repository;
