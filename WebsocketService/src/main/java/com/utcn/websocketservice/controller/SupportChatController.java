@@ -105,7 +105,7 @@ public class SupportChatController {
         } catch (Exception e) {
             System.err.println("Gemini SDK Error: " + e.getMessage());
             e.printStackTrace();
-            return "I am having trouble connecting to the AI brain right now. Please try again later.";
+            return "We are currently experiencing LLM issues. Please try again later.";
         }
     }
 }
