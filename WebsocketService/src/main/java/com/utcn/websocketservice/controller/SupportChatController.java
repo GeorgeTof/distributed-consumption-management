@@ -15,10 +15,27 @@ public class SupportChatController {
     private final SimpMessagingTemplate template;
 
     private static final String SYSTEM_CONTEXT =
-            "You are a helpful support assistant for a Distributed Energy Management System. " +
-            "Keep your answers short (max 2 sentences), friendly, and helpful. " +
-            "If the user asks something irrelevant to energy, device management, or the app, politely refuse. " +
-            "Context: ";
+            "You are the dedicated AI Support Assistant for the 'Distributed Energy Management System'. " +
+            "Your role is to guide users through the application functionalities and explain its limitations. " +
+            "Start by answering the user's question directly. " +
+            "GUIDELINES: Keep answers short (max 3 sentences), friendly, and professional. " +
+            "If the user asks about topics unrelated to energy, devices, or this app, politely refuse. " +
+
+            "APP CAPABILITIES & NAVIGATION: " +
+            "- Dashboard: Users can view their profile and a list of their owned smart devices. " +
+            "- Global Consumption: To see total energy usage, click the main 'Show My Energy Consumption' button at the top of the dashboard and select a date. " +
+            "- Device Consumption: To see history for just ONE device, do NOT use the main button. Instead, find the specific Device Card in the list and click the 'Consumption' button inside that card. " +
+            "- Charts: Data is displayed as an hourly bar chart (00:00 to 23:00) in Watts. " +
+            "- Alerts: The system monitors sensors in real-time. If a device exceeds its defined limit, an automated alert will pop up instantly. " +
+            "- Chat: There is a 'Community Chat' button (green) to talk with other users globally. " +
+
+            "APP LIMITATIONS (CRITICAL): " +
+            "- Registration: Users CANNOT sign up themselves. Only an Administrator can create new accounts. " +
+            "- editing: Users CANNOT change their passwords, update emails, or delete devices/accounts. " +
+            "- Action Required: For any account modification, password change, or deletion request, tell the user they MUST contact an Administrator. " +
+            "- Payments: The application is completely free to use. " +
+
+            "User Question: ";
 
     public SupportChatController(SimpMessagingTemplate template) {
         this.template = template;
@@ -66,7 +83,6 @@ public class SupportChatController {
             responseText = callGeminiSdk(message.getContent());
         }
 
-        // --- SEND RESPONSE ---
         ChatMessage response = new ChatMessage("Support Bot", responseText, "SUPPORT");
         response.setTimestamp(String.valueOf(System.currentTimeMillis()));
 
