@@ -93,10 +93,10 @@ services:
     networks:
       demo_net:
 
-  # --- MICROSERVICES (Updated to Docker Hub Images) ---
+  # --- MICROSERVICES (Updated to Lowercase Docker Hub Images) ---
 
   user-service:
-    image: georgetof/UserService:latest
+    image: georgetof/userservice:latest 
     container_name: user-service
     restart: always
     environment:
@@ -114,7 +114,7 @@ services:
       demo_net:
 
   device-service:
-    image: georgetof/DeviceService:latest
+    image: georgetof/deviceservice:latest
     container_name: device-service
     restart: always
     environment:
@@ -132,7 +132,7 @@ services:
       demo_net:
 
   auth-service: 
-    image: georgetof/AuthService:latest
+    image: georgetof/authservice:latest
     container_name: auth-service
     restart: always
     environment:
@@ -148,7 +148,7 @@ services:
       demo_net:
 
   monitor-service:
-    image: georgetof/MonitorService:latest
+    image: georgetof/monitorservice:latest
     container_name: monitor-service
     restart: always
     environment:
@@ -172,7 +172,7 @@ services:
       demo_net:
 
   monitor-service-2:
-    image: georgetof/MonitorService:latest
+    image: georgetof/monitorservice:latest
     container_name: monitor-service-2
     restart: always
     environment:
@@ -196,7 +196,7 @@ services:
       demo_net:
 
   monitor-service-3:
-    image: georgetof/MonitorService:latest
+    image: georgetof/monitorservice:latest
     container_name: monitor-service-3
     restart: always
     environment:
@@ -220,7 +220,7 @@ services:
       demo_net:
 
   load-balancer:
-    image: georgetof/LoadBalancer:latest
+    image: georgetof/loadbalancer:latest
     container_name: load-balancer
     restart: always
     environment:
@@ -233,7 +233,7 @@ services:
       demo_net:
 
   websocket-service:
-    image: georgetof/WebsocketService:latest
+    image: georgetof/websocketservice:latest
     container_name: websocket-service
     restart: always
     ports:
