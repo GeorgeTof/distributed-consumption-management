@@ -4,8 +4,8 @@ services:
     container_name: traefik
     restart: always
     ports:
-      - "80:80"       # HTTP
-      - "8080:8080"   # Traefik Dashboard
+      - "80:80"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
@@ -20,8 +20,8 @@ services:
     container_name: rabbitmq
     restart: always
     ports:
-      - "5672:5672"     # Exposed for Desktop Simulator
-      - "15672:15672"   # Management Dashboard
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -36,8 +36,8 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5673:5672"   
-      - "15673:15672"   # Management Dashboard
+      - "5673:5672"
+      - "15673:15672"
     networks:
       demo_net:
 
@@ -93,10 +93,10 @@ services:
     networks:
       demo_net:
 
-  # --- MICROSERVICES (Updated to Lowercase Docker Hub Images) ---
+  # --- MICROSERVICES (lowercase image names) ---
 
   user-service:
-    image: georgetof/userservice:latest 
+    image: georgetof/userservice:latest
     container_name: user-service
     restart: always
     environment:
@@ -131,7 +131,7 @@ services:
     networks:
       demo_net:
 
-  auth-service: 
+  auth-service:
     image: georgetof/authservice:latest
     container_name: auth-service
     restart: always
@@ -162,7 +162,7 @@ services:
       - RABBIT_INTERNAL_HOST=rabbitmq-internal
       - RABBIT_INTERNAL_PORT=5672
       - PORT=8080
-      - INSTANCE_INDEX=0 
+      - INSTANCE_INDEX=0
     depends_on:
       - monitor-db
       - rabbitmq
@@ -251,7 +251,7 @@ services:
 
   frontend:
     image: georgetof/frontend:latest
-    container_name: frontend-service 
+    container_name: frontend-service
     restart: unless-stopped
     depends_on:
       - traefik
@@ -263,7 +263,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`localhost`) && PathPrefix(`/`)"
-      - "traefik.http.routers.frontend.priority=1" 
+      - "traefik.http.routers.frontend.priority=1"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
