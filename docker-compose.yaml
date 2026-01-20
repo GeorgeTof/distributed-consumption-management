@@ -93,13 +93,12 @@ services:
     networks:
       demo_net:
 
+  # --- MICROSERVICES (Updated to Docker Hub Images) ---
+
   user-service:
-    build:
-      context: ./UserService
-      dockerfile: ./Dockerfile
+    image: georgetof/UserService:latest
     container_name: user-service
-    # ports:
-    #   - "8081:8080"
+    restart: always
     environment:
       - DB_IP=users-db
       - DB_PORT=5432
@@ -108,16 +107,16 @@ services:
       - DB_PASSWORD=root
       - RABBIT_HOST=rabbitmq-internal
       - RABBIT_PORT=5672
+    depends_on:
+      - users-db
+      - rabbitmq-internal
     networks:
       demo_net:
 
   device-service:
-    build:
-      context: ./DeviceService
-      dockerfile: ./Dockerfile
+    image: georgetof/DeviceService:latest
     container_name: device-service
-    # ports:
-    #   - "8082:8080"
+    restart: always
     environment:
       - DB_IP=devices-db
       - DB_PORT=5432
@@ -126,14 +125,16 @@ services:
       - DB_PASSWORD=root
       - RABBIT_HOST=rabbitmq-internal
       - RABBIT_PORT=5672
+    depends_on:
+      - devices-db
+      - rabbitmq-internal
     networks:
       demo_net:
 
   auth-service: 
-    build:
-      context: ./AuthService 
-      dockerfile: ./Dockerfile
+    image: georgetof/AuthService:latest
     container_name: auth-service
+    restart: always
     environment:
       - DB_IP=auth-db
       - DB_PORT=5432
@@ -141,15 +142,13 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=root
       - PORT=8081
-    # ports:
-    #   - "8081:8081"
+    depends_on:
+      - auth-db
     networks:
       demo_net:
 
   monitor-service:
-    build:
-      context: ./MonitorService
-      dockerfile: ./Dockerfile
+    image: georgetof/MonitorService:latest
     container_name: monitor-service
     restart: always
     environment:
@@ -173,9 +172,7 @@ services:
       demo_net:
 
   monitor-service-2:
-    build:
-      context: ./MonitorService
-      dockerfile: ./Dockerfile
+    image: georgetof/MonitorService:latest
     container_name: monitor-service-2
     restart: always
     environment:
@@ -199,9 +196,7 @@ services:
       demo_net:
 
   monitor-service-3:
-    build:
-      context: ./MonitorService
-      dockerfile: ./Dockerfile
+    image: georgetof/MonitorService:latest
     container_name: monitor-service-3
     restart: always
     environment:
@@ -225,9 +220,7 @@ services:
       demo_net:
 
   load-balancer:
-    build:
-      context: ./LoadBalancer
-      dockerfile: ./Dockerfile
+    image: georgetof/LoadBalancer:latest
     container_name: load-balancer
     restart: always
     environment:
@@ -240,9 +233,7 @@ services:
       demo_net:
 
   websocket-service:
-    build:
-      context: ./WebsocketService
-      dockerfile: ./Dockerfile
+    image: georgetof/WebsocketService:latest
     container_name: websocket-service
     restart: always
     ports:
@@ -259,11 +250,7 @@ services:
       demo_net:
 
   frontend:
-    build:
-      context: ./frontend  
-      dockerfile: ./Dockerfile
-      args:
-        - REACT_APP_BACKEND_HOST=/  
+    image: georgetof/frontend:latest
     container_name: frontend-service 
     restart: unless-stopped
     depends_on:
@@ -275,15 +262,9 @@ services:
       - demo_net
     labels:
       - "traefik.enable=true"
-      # route all unmatched paths (/) to frontend
       - "traefik.http.routers.frontend.rule=Host(`localhost`) && PathPrefix(`/`)"
-      
-      # priority lower than API routes (10 and 11)
       - "traefik.http.routers.frontend.priority=1" 
-      
-      # ginx listens on port 80 inside container
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
-        
 
 volumes:
   users-data:
