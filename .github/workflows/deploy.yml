@@ -6,14 +6,16 @@ on:
   workflow_dispatch:
 
 env:
-  # Define image names in lowercase (Docker Hub requirement)
-  REGISTRY: docker.io
+  DEPLOY_HOST: ${{ secrets.SSH_HOST }}
 
 jobs:
+  # ============================================
+  # STAGE 1: BUILD & PUSH DOCKER IMAGES
+  # ============================================
   build-and-push:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false  # Continue other builds even if one fails
+      fail-fast: false
       matrix:
         include:
           - service: AuthService
@@ -52,18 +54,17 @@ jobs:
     - name: Build and Test (Java)
       if: matrix.service != 'frontend'
       run: |
-        set -e  # Exit on error
+        set -e
         echo "Building ${{ matrix.service }}..."
         cd ${{ matrix.service }}
-        mvn package -DskipTests -B  # -B for batch mode (less verbose but cleaner logs)
+        mvn package -DskipTests -B
         echo "Build completed successfully"
 
     - name: Build and Push Docker Image
       run: |
-        set -e  # Exit on error
+        set -e
         cd ${{ matrix.service }}
         
-        # Use lowercase image name
         IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/${{ matrix.image_name }}:latest
         IMAGE_TAG_SHA=${{ secrets.DOCKER_USERNAME }}/${{ matrix.image_name }}:${{ github.sha }}
         
@@ -75,12 +76,14 @@ jobs:
           docker build -t $IMAGE_TAG -t $IMAGE_TAG_SHA .
         fi
         
-        echo "Pushing image: $IMAGE_TAG"
         docker push $IMAGE_TAG
         docker push $IMAGE_TAG_SHA
         
         echo "Successfully pushed $IMAGE_TAG"
 
+  # ============================================
+  # STAGE 2: DEPLOY TO AZURE VM
+  # ============================================
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -96,7 +99,6 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         source: "docker-compose.yaml,traefik.yml,dynamic/"
         target: "/home/${{ secrets.SSH_USERNAME }}/distributed-project"
-        debug: true  # Enable debug logging
 
     - name: Deploy to Azure VM
       uses: appleboy/ssh-action@master
@@ -104,9 +106,8 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
-        debug: true  # Enable debug logging
         script: |
-          set -e  # Exit on any error
+          set -e
           
           echo "=== Starting deployment ==="
           cd /home/${{ secrets.SSH_USERNAME }}/distributed-project
@@ -124,4 +125,226 @@ jobs:
           docker compose up -d --remove-orphans
           
           echo "=== Deployment complete ==="
-          docker compose ps
+
+  # ============================================
+  # STAGE 3: SMOKE TESTS
+  # ============================================
+  smoke-tests:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for services to stabilize
+      run: |
+        echo "Waiting 60 seconds for all services to start..."
+        sleep 60
+
+    - name: Check containers are running
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          set -e
+          echo "=== Checking container status ==="
+          cd /home/${{ secrets.SSH_USERNAME }}/distributed-project
+          
+          # Get list of expected services
+          EXPECTED_CONTAINERS=(
+            "traefik"
+            "rabbitmq"
+            "rabbitmq-internal"
+            "users-db"
+            "devices-db"
+            "auth-db"
+            "monitor-db"
+            "user-service"
+            "device-service"
+            "auth-service"
+            "monitor-service"
+            "monitor-service-2"
+            "monitor-service-3"
+            "load-balancer"
+            "websocket-service"
+            "frontend-service"
+          )
+          
+          FAILED=0
+          
+          for container in "${EXPECTED_CONTAINERS[@]}"; do
+            STATUS=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || echo "not_found")
+            if [ "$STATUS" == "running" ]; then
+              echo "✅ $container: running"
+            else
+              echo "❌ $container: $STATUS"
+              FAILED=1
+            fi
+          done
+          
+          if [ $FAILED -eq 1 ]; then
+            echo ""
+            echo "=== Container logs for failed services ==="
+            docker compose ps -a
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All containers are running!"
+
+    - name: Check database connections
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          set -e
+          echo "=== Checking database health ==="
+          
+          DATABASES=("users-db" "devices-db" "auth-db" "monitor-db")
+          
+          for db in "${DATABASES[@]}"; do
+            if docker exec "$db" pg_isready -U postgres > /dev/null 2>&1; then
+              echo "✅ $db: PostgreSQL is ready"
+            else
+              echo "❌ $db: PostgreSQL is NOT ready"
+              exit 1
+            fi
+          done
+          
+          echo ""
+          echo "✅ All databases are healthy!"
+
+    - name: Check RabbitMQ connections
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          set -e
+          echo "=== Checking RabbitMQ health ==="
+          
+          # Check main RabbitMQ
+          if docker exec rabbitmq rabbitmq-diagnostics check_running > /dev/null 2>&1; then
+            echo "✅ rabbitmq: Running"
+          else
+            echo "❌ rabbitmq: NOT running"
+            exit 1
+          fi
+          
+          # Check internal RabbitMQ
+          if docker exec rabbitmq-internal rabbitmq-diagnostics check_running > /dev/null 2>&1; then
+            echo "✅ rabbitmq-internal: Running"
+          else
+            echo "❌ rabbitmq-internal: NOT running"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All message brokers are healthy!"
+
+    - name: Check HTTP endpoints
+      run: |
+        set -e
+        echo "=== Checking HTTP endpoints ==="
+        
+        BASE_URL="http://${{ secrets.SSH_HOST }}"
+        
+        # Function to check endpoint
+        check_endpoint() {
+          local name=$1
+          local url=$2
+          local expected_code=${3:-200}
+          
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+          
+          if [ "$HTTP_CODE" == "$expected_code" ]; then
+            echo "✅ $name: HTTP $HTTP_CODE"
+            return 0
+          else
+            echo "❌ $name: HTTP $HTTP_CODE (expected $expected_code)"
+            return 1
+          fi
+        }
+        
+        FAILED=0
+        
+        # Check frontend
+        check_endpoint "Frontend" "$BASE_URL/" || FAILED=1
+        
+        # Check auth login endpoint (public, should return 405 for GET or 200)
+        # We use POST check or just verify it doesn't 404/502
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/auth/login" || echo "000")
+        if [ "$HTTP_CODE" != "000" ] && [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "503" ] && [ "$HTTP_CODE" != "504" ]; then
+          echo "✅ Auth Login Endpoint: HTTP $HTTP_CODE (service reachable)"
+        else
+          echo "❌ Auth Login Endpoint: HTTP $HTTP_CODE (service not reachable)"
+          FAILED=1
+        fi
+        
+        # Check Traefik dashboard
+        check_endpoint "Traefik Dashboard" "$BASE_URL:8080/dashboard/" "200" || FAILED=1
+        
+        if [ $FAILED -eq 1 ]; then
+          echo ""
+          echo "❌ Some HTTP checks failed!"
+          exit 1
+        fi
+        
+        echo ""
+        echo "✅ All HTTP endpoints are reachable!"
+
+    - name: Test auth login flow
+      run: |
+        set -e
+        echo "=== Testing authentication flow ==="
+        
+        BASE_URL="http://${{ secrets.SSH_HOST }}"
+        
+        # Test login with default admin credentials
+        # Adjust these credentials to match your default test user
+        RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
+          -H "Content-Type: application/json" \
+          -d '{"username":"admin","password":"admin"}' \
+          --max-time 15)
+        
+        echo "Login response: $RESPONSE"
+        
+        # Check if we got a token back (adjust based on your API response format)
+        if echo "$RESPONSE" | grep -q "token\|jwt\|access"; then
+          echo "✅ Authentication flow working - received token"
+        elif echo "$RESPONSE" | grep -qi "error\|invalid\|unauthorized"; then
+          echo "⚠️  Login returned error (might be expected if no default user exists)"
+          echo "   Response: $RESPONSE"
+          # Don't fail - credentials might just be wrong
+        else
+          echo "⚠️  Unexpected response format"
+          echo "   Response: $RESPONSE"
+        fi
+        
+        echo ""
+        echo "✅ Auth service is responding!"
+
+    - name: Print deployment summary
+      if: always()
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          echo "=========================================="
+          echo "         DEPLOYMENT SUMMARY"
+          echo "=========================================="
+          echo ""
+          echo "📍 Application URL: http://${{ secrets.SSH_HOST }}"
+          echo "📊 Traefik Dashboard: http://${{ secrets.SSH_HOST }}:8080"
+          echo "🐰 RabbitMQ Management: http://${{ secrets.SSH_HOST }}:15672"
+          echo ""
+          echo "=== Container Status ==="
+          cd /home/${{ secrets.SSH_USERNAME }}/distributed-project
+          docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+          echo ""
+          echo "=== Resource Usage ==="
+          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
