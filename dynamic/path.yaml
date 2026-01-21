@@ -1,62 +1,62 @@
 http:
   routers:
     user-swagger: 
-      rule: "Host(`localhost`) && (PathPrefix(`/users/swagger-ui`) || PathPrefix(`/users/v3/api-docs`))"
+      rule: "PathPrefix(`/users/swagger-ui`) || PathPrefix(`/users/v3/api-docs`)"
       entryPoints: [web]
       service: user-service
       priority: 100 
       middlewares: [common-strip-swagger] 
 
     user-api:
-      rule: "Host(`localhost`) && PathPrefix(`/users`)"
+      rule: "PathPrefix(`/users`)"
       entryPoints: [web]
       service: user-service
       priority: 50
       middlewares: [jwt-auth]
 
     device-swagger:
-      rule: "Host(`localhost`) && (PathPrefix(`/devices/swagger-ui`) || PathPrefix(`/devices/v3/api-docs`))"
+      rule: "PathPrefix(`/devices/swagger-ui`) || PathPrefix(`/devices/v3/api-docs`)"
       entryPoints: [web]
       service: device-service
       priority: 100
       middlewares: [common-strip-swagger] 
 
     device-api:
-      rule: "Host(`localhost`) && PathPrefix(`/devices`)"
+      rule: "PathPrefix(`/devices`)"
       entryPoints: [web]
       service: device-service
       priority: 50 
       middlewares: [jwt-auth]
     
     auth-swagger:
-      rule: "Host(`localhost`) && (PathPrefix(`/auth/swagger-ui`) || PathPrefix(`/auth/v3/api-docs`))"
+      rule: "PathPrefix(`/auth/swagger-ui`) || PathPrefix(`/auth/v3/api-docs`)"
       entryPoints: [web]
       service: auth-service
       priority: 100 
       middlewares: [common-strip-swagger]
 
     auth-api-public:
-      rule: "Host(`localhost`) && Path(`/auth/login`)"
+      rule: "Path(`/auth/login`)"
       entryPoints: [web]
       service: auth-service
       priority: 11 
 
     auth-api-protected:
-      rule: "Host(`localhost`) && PathPrefix(`/auth`)"
+      rule: "PathPrefix(`/auth`)"
       entryPoints: [web]
       service: auth-service
       middlewares: [jwt-auth]
       priority: 10
 
     monitor-swagger:
-      rule: "Host(`localhost`) && (PathPrefix(`/monitor/swagger-ui`) || PathPrefix(`/monitor/v3/api-docs`))"
+      rule: "PathPrefix(`/monitor/swagger-ui`) || PathPrefix(`/monitor/v3/api-docs`)"
       entryPoints: [web]
       service: monitor-service
       priority: 100 
       middlewares: [common-strip-swagger] 
 
     monitor-api:
-      rule: "Host(`localhost`) && PathPrefix(`/monitor`)"
+      rule: "PathPrefix(`/monitor`)"
       entryPoints: [web]
       service: monitor-service
       priority: 50 
@@ -89,7 +89,7 @@ http:
     user-service:
       loadBalancer:
         servers:
-          - url: "http://user-service:8080"    # container name + internal port
+          - url: "http://user-service:8080"
     device-service:
       loadBalancer:
         servers:
