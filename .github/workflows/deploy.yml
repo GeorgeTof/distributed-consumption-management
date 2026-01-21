@@ -250,31 +250,18 @@ jobs:
         echo "=== Checking HTTP endpoints ==="
         
         BASE_URL="http://${{ secrets.SSH_HOST }}"
-        
-        # Function to check endpoint
-        check_endpoint() {
-          local name=$1
-          local url=$2
-          local expected_code=${3:-200}
-          
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
-          
-          if [ "$HTTP_CODE" == "$expected_code" ]; then
-            echo "✅ $name: HTTP $HTTP_CODE"
-            return 0
-          else
-            echo "❌ $name: HTTP $HTTP_CODE (expected $expected_code)"
-            return 1
-          fi
-        }
-        
         FAILED=0
         
         # Check frontend
-        check_endpoint "Frontend" "$BASE_URL/" || FAILED=1
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/" || echo "000")
+        if [ "$HTTP_CODE" == "200" ]; then
+          echo "✅ Frontend: HTTP $HTTP_CODE"
+        else
+          echo "❌ Frontend: HTTP $HTTP_CODE (expected 200)"
+          FAILED=1
+        fi
         
-        # Check auth login endpoint (public, should return 405 for GET or 200)
-        # We use POST check or just verify it doesn't 404/502
+        # Check auth login endpoint - verify service is reachable (any response except timeout/502/503)
         HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$BASE_URL/auth/login" || echo "000")
         if [ "$HTTP_CODE" != "000" ] && [ "$HTTP_CODE" != "502" ] && [ "$HTTP_CODE" != "503" ] && [ "$HTTP_CODE" != "504" ]; then
           echo "✅ Auth Login Endpoint: HTTP $HTTP_CODE (service reachable)"
@@ -282,9 +269,6 @@ jobs:
           echo "❌ Auth Login Endpoint: HTTP $HTTP_CODE (service not reachable)"
           FAILED=1
         fi
-        
-        # Check Traefik dashboard
-        check_endpoint "Traefik Dashboard" "$BASE_URL:8080/dashboard/" "200" || FAILED=1
         
         if [ $FAILED -eq 1 ]; then
           echo ""
@@ -339,8 +323,6 @@ jobs:
           echo "=========================================="
           echo ""
           echo "📍 Application URL: http://${{ secrets.SSH_HOST }}"
-          echo "📊 Traefik Dashboard: http://${{ secrets.SSH_HOST }}:8080"
-          echo "🐰 RabbitMQ Management: http://${{ secrets.SSH_HOST }}:15672"
           echo ""
           echo "=== Container Status ==="
           cd /home/${{ secrets.SSH_USERNAME }}/distributed-project
