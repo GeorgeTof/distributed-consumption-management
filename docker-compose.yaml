@@ -42,7 +42,7 @@ services:
       demo_net:
 
   users-db:
-    image: postgres
+    image: postgres:17
     container_name: users-db
     restart: always
     environment:
@@ -55,7 +55,7 @@ services:
       demo_net:
 
   devices-db:
-    image: postgres
+    image: postgres:17
     container_name: devices-db
     restart: always
     environment:
@@ -68,7 +68,7 @@ services:
       demo_net:
 
   auth-db:
-    image: postgres
+    image: postgres:17
     container_name: auth-db
     restart: always
     environment:
@@ -81,7 +81,7 @@ services:
       demo_net:
 
   monitor-db:
-    image: postgres
+    image: postgres:17
     container_name: monitor-db
     restart: always
     environment:
